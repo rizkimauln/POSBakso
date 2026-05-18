@@ -2,7 +2,7 @@
 
 Frontend React untuk POS Warung Bakso.
 
-## Stack
+## Stackk
 
 - React.js
 - Vite

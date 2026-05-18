@@ -4,8 +4,6 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
-
 class MenuResource extends JsonResource
 {
     /**
@@ -13,6 +11,10 @@ class MenuResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $imageUrl = $this->image_path
+            ? $request->getSchemeAndHttpHost().'/storage/'.$this->image_path
+            : null;
+
         return [
             'id' => $this->id,
             'category_id' => $this->category_id,
@@ -21,7 +23,7 @@ class MenuResource extends JsonResource
             'description' => $this->description,
             'price' => $this->price,
             'image_path' => $this->image_path,
-            'image_url' => $this->image_path ? Storage::disk('public')->url($this->image_path) : null,
+            'image_url' => $imageUrl,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

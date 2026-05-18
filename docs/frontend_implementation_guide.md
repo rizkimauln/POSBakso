@@ -300,17 +300,17 @@ Use warm food-inspired accents but keep the interface professional and not too d
 
 Tujuan: membersihkan starter Vite dan menyiapkan fondasi aplikasi.
 
-- [ ] Rapikan file starter Vite.
-- [ ] Buat struktur folder target.
-- [ ] Install dependency: axios, react-router-dom, laravel-echo, pusher-js, lucide-react.
-- [ ] Buat `src/lib/api.js`.
-- [ ] Buat `src/lib/echo.js`.
-- [ ] Buat `src/lib/currency.js`.
-- [ ] Buat `src/config/env.js`.
-- [ ] Buat router dasar.
-- [ ] Buat layout dasar: `AuthLayout`, `AppLayout`, `CustomerLayout`.
-- [ ] Buat komponen UI dasar: Button, Input, Select, Modal, Badge, DataTable.
-- [ ] Pastikan `npm run lint` dan `npm run build` berhasil.
+- [x] Rapikan file starter Vite.
+- [x] Buat struktur folder target.
+- [x] Install dependency: axios, react-router-dom, laravel-echo, pusher-js, lucide-react.
+- [x] Buat `src/lib/api.js`.
+- [x] Buat `src/lib/echo.js`.
+- [x] Buat `src/lib/currency.js`.
+- [x] Buat `src/config/env.js`.
+- [x] Buat router dasar.
+- [x] Buat layout dasar: `AuthLayout`, `AppLayout`, `CustomerLayout`.
+- [x] Buat komponen UI dasar: Button, Input, Select, Modal, Badge, DataTable.
+- [x] Pastikan `npm run lint` dan `npm run build` berhasil.
 
 Definition of Done:
 
@@ -322,15 +322,15 @@ Definition of Done:
 
 Tujuan: user admin/kasir bisa login dan masuk dashboard sesuai role.
 
-- [ ] Buat `authService`.
-- [ ] Buat `AuthContext`.
-- [ ] Buat `LoginPage`.
-- [ ] Simpan token dan user setelah login.
-- [ ] Buat protected route.
-- [ ] Buat role guard untuk admin-only page.
-- [ ] Buat logout.
-- [ ] Buat auto-fetch `/me` saat reload.
-- [ ] Tangani 401 dari API.
+- [x] Buat `authService`.
+- [x] Buat `AuthContext`.
+- [x] Buat `LoginPage`.
+- [x] Simpan token dan user setelah login.
+- [x] Buat protected route.
+- [x] Buat role guard untuk admin-only page.
+- [x] Buat logout.
+- [x] Buat auto-fetch `/me` saat reload.
+- [x] Tangani 401 dari API.
 
 Endpoint:
 
@@ -350,12 +350,12 @@ Definition of Done:
 
 Tujuan: membuat kerangka aplikasi dashboard.
 
-- [ ] Buat sidebar navigation.
-- [ ] Buat topbar.
-- [ ] Buat active navigation state.
-- [ ] Buat role-based menu.
-- [ ] Buat dashboard ringkas.
-- [ ] Buat loading dan empty state global.
+- [x] Buat sidebar navigation.
+- [x] Buat topbar.
+- [x] Buat active navigation state.
+- [x] Buat role-based menu.
+- [x] Buat dashboard ringkas.
+- [x] Buat loading dan empty state global.
 
 Menu admin:
 
@@ -378,13 +378,13 @@ Definition of Done:
 
 Tujuan: admin bisa mengelola kategori.
 
-- [ ] Buat `categoryService`.
-- [ ] Buat halaman list kategori.
-- [ ] Tambahkan search.
-- [ ] Tambahkan pagination.
-- [ ] Tambahkan create/edit modal.
-- [ ] Tambahkan delete confirm.
-- [ ] Tampilkan validation error.
+- [x] Buat `categoryService`.
+- [x] Buat halaman list kategori.
+- [x] Tambahkan search.
+- [x] Tambahkan pagination.
+- [x] Tambahkan create/edit modal.
+- [x] Tambahkan delete confirm.
+- [x] Tampilkan validation error.
 
 Endpoint:
 
@@ -404,13 +404,13 @@ Definition of Done:
 
 Tujuan: admin bisa mengelola menu dan gambar.
 
-- [ ] Buat `menuService`.
-- [ ] Buat list menu dengan filter category dan active.
-- [ ] Buat create/edit modal.
-- [ ] Buat upload image preview.
-- [ ] Buat toggle active.
-- [ ] Buat delete confirm.
-- [ ] Format harga rupiah.
+- [x] Buat `menuService`.
+- [x] Buat list menu dengan filter category dan active.
+- [x] Buat create/edit modal.
+- [x] Buat upload image preview.
+- [x] Buat toggle active.
+- [x] Buat delete confirm.
+- [x] Format harga rupiah.
 
 Endpoint:
 
@@ -431,14 +431,14 @@ Definition of Done:
 
 Tujuan: admin bisa mengelola meja dan QR.
 
-- [ ] Buat `tableService`.
-- [ ] Buat list meja.
-- [ ] Tampilkan status meja.
-- [ ] Buat create/edit modal.
-- [ ] Buat update status meja.
-- [ ] Buat regenerate QR token.
-- [ ] Tampilkan QR URL customer.
-- [ ] Tambahkan tombol copy link QR.
+- [x] Buat `tableService`.
+- [x] Buat list meja.
+- [x] Tampilkan status meja.
+- [x] Buat create/edit modal.
+- [x] Buat update status meja.
+- [x] Buat regenerate QR token.
+- [x] Tampilkan QR URL customer.
+- [x] Tambahkan tombol copy link QR.
 
 Endpoint:
 
@@ -460,15 +460,15 @@ Definition of Done:
 
 Tujuan: kasir bisa membuat order cepat.
 
-- [ ] Buat `orderService`.
-- [ ] Buat menu grid.
-- [ ] Buat cart panel.
-- [ ] Pilih meja.
-- [ ] Tambah item ke cart.
-- [ ] Edit quantity.
-- [ ] Tambah catatan item.
-- [ ] Submit order.
-- [ ] Tampilkan success dan invoice link.
+- [x] Buat `orderService`.
+- [x] Buat menu grid.
+- [x] Buat cart panel.
+- [x] Pilih meja.
+- [x] Tambah item ke cart.
+- [x] Edit quantity.
+- [x] Tambah catatan item.
+- [x] Submit order.
+- [x] Tampilkan success dan invoice link.
 
 Endpoint:
 
@@ -487,15 +487,15 @@ Definition of Done:
 
 Tujuan: layar dapur/kasir bisa menerima order live.
 
-- [ ] Buat `kdsService`.
-- [ ] Buat `KdsPage`.
-- [ ] Fetch initial active orders.
-- [ ] Listen Reverb private channel `private-kds.orders`.
-- [ ] Handle `.order.created`.
-- [ ] Handle `.order.item.status.updated`.
-- [ ] Handle `.order.completed`.
-- [ ] Update item status dari UI.
-- [ ] Buat tampilan besar dan mudah dibaca.
+- [x] Buat `kdsService`.
+- [x] Buat `KdsPage`.
+- [x] Fetch initial active orders.
+- [x] Listen Reverb private channel `private-kds.orders`.
+- [x] Handle `.order.created`.
+- [x] Handle `.order.item.status.updated`.
+- [x] Handle `.order.completed`.
+- [x] Update item status dari UI.
+- [x] Buat tampilan besar dan mudah dibaca.
 
 Endpoint:
 
@@ -514,12 +514,12 @@ Definition of Done:
 
 Tujuan: kasir menyelesaikan pembayaran.
 
-- [ ] Buat list order belum lunas.
-- [ ] Buat detail invoice.
-- [ ] Buat checkout form.
-- [ ] Pilih payment method `tunai` atau `qris`.
-- [ ] Tampilkan receipt setelah checkout.
-- [ ] Tambahkan print-friendly invoice.
+- [x] Buat list order belum lunas.
+- [x] Buat detail invoice.
+- [x] Buat checkout form.
+- [x] Pilih payment method `tunai` atau `qris`.
+- [x] Tampilkan receipt setelah checkout.
+- [x] Tambahkan print-friendly invoice.
 
 Endpoint:
 
@@ -538,13 +538,13 @@ Definition of Done:
 
 Tujuan: admin bisa melihat laporan penjualan.
 
-- [ ] Buat `reportService`.
-- [ ] Buat laporan harian.
-- [ ] Buat laporan rentang tanggal.
-- [ ] Buat menu terlaris.
-- [ ] Tambahkan filter tanggal dan payment method.
-- [ ] Tampilkan summary cards.
-- [ ] Tampilkan table menu terlaris.
+- [x] Buat `reportService`.
+- [x] Buat laporan harian.
+- [x] Buat laporan rentang tanggal.
+- [x] Buat menu terlaris.
+- [x] Tambahkan filter tanggal dan payment method.
+- [x] Tampilkan summary cards.
+- [x] Tampilkan table menu terlaris.
 
 Endpoint:
 
@@ -563,13 +563,13 @@ Definition of Done:
 
 Tujuan: admin bisa mengelola akun kasir.
 
-- [ ] Buat `userService`.
-- [ ] Buat list user.
-- [ ] Buat create/edit modal.
-- [ ] Password wajib saat create.
-- [ ] Password opsional saat update.
-- [ ] Role hanya `admin` dan `kasir`.
-- [ ] Delete confirm.
+- [x] Buat `userService`.
+- [x] Buat list user.
+- [x] Buat create/edit modal.
+- [x] Password wajib saat create.
+- [x] Password opsional saat update.
+- [x] Role hanya `admin` dan `kasir`.
+- [x] Delete confirm.
 
 Endpoint:
 
@@ -590,13 +590,13 @@ Definition of Done:
 
 Tujuan: customer bisa order dari QR tanpa login.
 
-- [ ] Buat `CustomerMenuPage`.
-- [ ] Resolve QR token.
-- [ ] Tampilkan menu aktif.
-- [ ] Buat cart mobile.
-- [ ] Submit public order.
-- [ ] Simpan `public_token` order.
-- [ ] Redirect ke customer order status page.
+- [x] Buat `CustomerMenuPage`.
+- [x] Resolve QR token.
+- [x] Tampilkan menu aktif.
+- [x] Buat cart mobile.
+- [x] Submit public order.
+- [x] Simpan `public_token` order.
+- [x] Redirect ke customer order status page.
 
 Endpoint:
 
@@ -615,12 +615,12 @@ Definition of Done:
 
 Tujuan: customer mendapat notifikasi status order.
 
-- [ ] Buat `CustomerOrderStatusPage`.
-- [ ] Listen channel `orders.{public_token}`.
-- [ ] Handle `.order.status.updated`.
-- [ ] Handle `.order.item.status.updated`.
-- [ ] Handle `.order.completed`.
-- [ ] Tampilkan progress: pending, diproses, selesai.
+- [x] Buat `CustomerOrderStatusPage`.
+- [x] Listen channel `orders.{public_token}`.
+- [x] Handle `.order.status.updated`.
+- [x] Handle `.order.item.status.updated`.
+- [x] Handle `.order.completed`.
+- [x] Tampilkan progress: pending, diproses, selesai.
 
 Definition of Done:
 
@@ -631,17 +631,17 @@ Definition of Done:
 
 Tujuan: frontend nyaman dipakai dan siap demo.
 
-- [ ] Rapikan responsive desktop/mobile.
-- [ ] Tambahkan toast notification.
-- [ ] Tambahkan skeleton/loading state.
-- [ ] Tambahkan empty/error state setiap halaman.
-- [ ] Pastikan semua form punya validation feedback.
-- [ ] Pastikan semua action destructive punya confirm.
-- [ ] Jalankan `npm run lint`.
-- [ ] Jalankan `npm run build`.
-- [ ] Test manual flow admin: login, CRUD, report.
-- [ ] Test manual flow kasir: order, KDS, checkout.
-- [ ] Test manual flow customer: QR order dan live status.
+- [x] Rapikan responsive desktop/mobile.
+- [x] Tambahkan toast notification.
+- [x] Tambahkan skeleton/loading state.
+- [x] Tambahkan empty/error state setiap halaman.
+- [x] Pastikan semua form punya validation feedback.
+- [x] Pastikan semua action destructive punya confirm.
+- [x] Jalankan `npm run lint`.
+- [x] Jalankan `npm run build`.
+- [x] Test manual flow admin: login, CRUD, report.
+- [x] Test manual flow kasir: order, KDS, checkout.
+- [x] Test manual flow customer: QR order dan live status.
 
 Definition of Done:
 

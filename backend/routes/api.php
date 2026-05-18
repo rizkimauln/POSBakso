@@ -17,7 +17,9 @@ use App\Http\Controllers\Api\UserController;
 */
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/public/tables/{qrToken}', [TableController::class, 'resolveQr'])->name('public.tables.resolve');
+Route::get('/public/menus', [MenuController::class, 'publicIndex'])->name('public.menus.index');
 Route::post('/public/orders', [OrderController::class, 'publicStore'])->name('public.orders.store');
+Route::get('/public/orders/{publicToken}', [OrderController::class, 'publicShow'])->name('public.orders.show');
 
 /*
 |--------------------------------------------------------------------------

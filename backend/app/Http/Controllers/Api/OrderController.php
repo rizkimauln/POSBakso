@@ -88,6 +88,22 @@ class OrderController extends Controller
         );
     }
 
+    public function publicShow(string $publicToken)
+    {
+        $order = Order::query()
+            ->where('public_token', $publicToken)
+            ->first();
+
+        if (! $order) {
+            return ApiResponse::error('Order tidak ditemukan.', 404);
+        }
+
+        return ApiResponse::success(
+            'Status order berhasil diambil',
+            new OrderResource($this->orderService->findDetailed($order))
+        );
+    }
+
     public function show(Order $order)
     {
         return ApiResponse::success(

@@ -33,6 +33,22 @@ class MenuController extends Controller
             ]);
     }
 
+    public function publicIndex(Request $request)
+    {
+        $perPage = min((int) $request->integer('per_page', 100), 100);
+
+        $menus = $this->menuService->paginate(
+            array_merge($request->only(['search', 'category_id']), ['is_active' => true]),
+            $perPage
+        );
+
+        return MenuResource::collection($menus)
+            ->additional([
+                'status' => 'success',
+                'message' => 'Data menu aktif berhasil diambil',
+            ]);
+    }
+
     public function store(StoreMenuRequest $request)
     {
         $menu = $this->menuService->create(

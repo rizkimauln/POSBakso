@@ -3,10 +3,8 @@ export const env = {
   broadcastAuthUrl:
     import.meta.env.VITE_BROADCAST_AUTH_URL ||
     'http://localhost:8000/broadcasting/auth',
-  reverb: {
-    key: import.meta.env.VITE_REVERB_APP_KEY || '',
-    host: import.meta.env.VITE_REVERB_HOST || 'localhost',
-    port: Number(import.meta.env.VITE_REVERB_PORT || 8080),
-    scheme: import.meta.env.VITE_REVERB_SCHEME || 'http',
+  pusher: {
+    key: import.meta.env.VITE_PUSHER_APP_KEY || '',
+    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap1',
   },
 }

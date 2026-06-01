@@ -5,7 +5,7 @@ POS Bakso adalah sistem kasir (Point of Sales) terpadu yang dirancang khusus unt
 ## Arsitektur Proyek
 
 Sistem ini terdiri dari dua bagian utama:
-1. **Backend**: Dibangun menggunakan Laravel 11. Menangani API, autentikasi (Sanctum), dan komunikasi realtime (Reverb).
+1. **Backend**: Dibangun menggunakan Laravel. Menangani API, autentikasi (Sanctum), dan komunikasi realtime (Pusher Channels).
 2. **Frontend**: Dibangun menggunakan React.js dan Vite dengan Tailwind CSS. Menangani antarmuka pengguna untuk Admin, Kasir, dan Pelanggan.
 
 ---
@@ -84,22 +84,20 @@ Sebelum melakukan instalasi, pastikan sistem Anda telah memiliki perangkat lunak
    copy .env.example .env
    ```
 
-4. Sesuaikan konfigurasi pada file `frontend/.env`. Pastikan `VITE_REVERB_APP_KEY` sama dengan `REVERB_APP_KEY` yang ada di `backend/.env`:
+4. Sesuaikan konfigurasi pada file `frontend/.env`. Gunakan public key dan cluster Pusher yang sama seperti backend:
    ```env
    VITE_API_BASE_URL=http://localhost:8000/api
    VITE_BROADCAST_AUTH_URL=http://localhost:8000/broadcasting/auth
    
-   VITE_REVERB_APP_KEY=local-key
-   VITE_REVERB_HOST=localhost
-   VITE_REVERB_PORT=8080
-   VITE_REVERB_SCHEME=http
+   VITE_PUSHER_APP_KEY=your-pusher-key
+   VITE_PUSHER_APP_CLUSTER=ap1
    ```
 
 ---
 
 ## 3. Menjalankan Aplikasi (Development)
 
-Untuk menjalankan aplikasi secara penuh di lingkungan pengembangan, Anda membutuhkan tiga tab terminal yang berjalan bersamaan:
+Untuk menjalankan aplikasi secara penuh di lingkungan pengembangan, Anda membutuhkan dua tab terminal yang berjalan bersamaan:
 
 **Terminal 1 (Backend API):**
 ```bash
@@ -107,13 +105,7 @@ cd backend
 php artisan serve
 ```
 
-**Terminal 2 (Backend Realtime WebSockets):**
-```bash
-cd backend
-php artisan reverb:start
-```
-
-**Terminal 3 (Frontend Vite Server):**
+**Terminal 2 (Frontend Vite Server):**
 ```bash
 cd frontend
 npm run dev
@@ -169,7 +161,7 @@ Data seeder telah menyiapkan dua jenis peran (role) pengguna:
 
 ## 5. Saluran Komunikasi (WebSockets)
 
-Aplikasi ini menggunakan Laravel Reverb untuk pembaruan instan (tanpa muat ulang halaman):
+Aplikasi ini menggunakan Pusher Channels untuk pembaruan instan (tanpa muat ulang halaman):
 - `private-kds.orders`: Saluran privat untuk kasir menerima notifikasi pesanan masuk.
 - `orders.{public_token}`: Saluran publik spesifik untuk melacak status pesanan tiap pelanggan.
 

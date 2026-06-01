@@ -10,7 +10,7 @@ Frontend React untuk POS Warung Bakso.
 - Axios
 - React Router
 - Laravel Echo
-- Pusher JS untuk koneksi Reverb
+- Pusher JS untuk koneksi Pusher Channels
 - Lucide React untuk icon
 
 ## Setup
@@ -32,10 +32,8 @@ Isi `.env`:
 ```env
 VITE_API_BASE_URL=http://localhost:8000/api
 VITE_BROADCAST_AUTH_URL=http://localhost:8000/broadcasting/auth
-VITE_REVERB_APP_KEY=isi_dari_backend_env
-VITE_REVERB_HOST=localhost
-VITE_REVERB_PORT=8080
-VITE_REVERB_SCHEME=http
+VITE_PUSHER_APP_KEY=isi_dari_backend_env
+VITE_PUSHER_APP_CLUSTER=ap1
 ```
 
 Jalankan development server:
@@ -55,10 +53,9 @@ npm run preview
 
 ## Catatan
 
-Pastikan backend Laravel dan Reverb aktif:
+Pastikan backend Laravel aktif:
 
 ```bash
 cd ../backend
 php artisan serve
-php artisan reverb:start
 ```

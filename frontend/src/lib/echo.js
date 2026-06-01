@@ -13,13 +13,10 @@ export function getEcho() {
   window.Pusher = Pusher
 
   echoInstance = new Echo({
-    broadcaster: 'reverb',
-    key: env.reverb.key,
-    wsHost: env.reverb.host,
-    wsPort: env.reverb.port,
-    wssPort: env.reverb.port,
-    forceTLS: env.reverb.scheme === 'https',
-    enabledTransports: ['ws', 'wss'],
+    broadcaster: 'pusher',
+    key: env.pusher.key,
+    cluster: env.pusher.cluster,
+    forceTLS: true,
     authEndpoint: env.broadcastAuthUrl,
     auth: {
       headers: {

@@ -1,3 +1,4 @@
+# Backend (Laravel)
 /backend/vendor/
 /backend/node_modules/
 /backend/.env
@@ -12,17 +13,34 @@
 /backend/storage/framework/views/*
 /backend/storage/logs/*.log
 /backend/public/storage
+/backend/public/build
+/backend/public/hot
+/backend/storage/pail
+
+# Frontend (React/Vite)
 /frontend/node_modules/
 /frontend/dist/
+/frontend/dist-ssr/
 /frontend/.env
 /frontend/.env.*
 !/frontend/.env.example
 /frontend/.vite/
 /frontend/coverage/
+
+# OS / Editor / Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 .DS_Store
 Thumbs.db
 .codex/config.toml
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

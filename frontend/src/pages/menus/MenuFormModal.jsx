@@ -13,7 +13,6 @@ export function MenuFormModal({ categories, isOpen, menu, onClose, onSaved }) {
   const [form, setForm] = useState({
     category_id: menu?.category_id ? String(menu.category_id) : '',
     name: menu?.name || '',
-    description: menu?.description || '',
     price: menu?.price ? String(menu.price) : '',
     is_active: menu?.is_active ?? true,
     image: null,
@@ -51,7 +50,6 @@ export function MenuFormModal({ categories, isOpen, menu, onClose, onSaved }) {
       const payload = {
         ...form,
         name: form.name.trim(),
-        description: form.description.trim(),
         price: Number(form.price),
       }
 
@@ -125,26 +123,7 @@ export function MenuFormModal({ categories, isOpen, menu, onClose, onSaved }) {
           value={form.name}
         />
 
-        <div className="space-y-1.5">
-          <label className="block text-sm font-semibold text-slate-700" htmlFor="menu-description">
-            Deskripsi
-          </label>
-          <textarea
-            className={[
-              'min-h-28 w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-700 focus:ring-2 focus:ring-red-100',
-              errors.description ? 'border-red-500' : 'border-slate-300',
-            ].join(' ')}
-            id="menu-description"
-            maxLength={1000}
-            name="description"
-            onChange={updateField}
-            placeholder="Deskripsi singkat menu untuk kasir/customer."
-            value={form.description}
-          />
-          {errors.description ? (
-            <p className="text-sm text-red-600">{errors.description[0]}</p>
-          ) : null}
-        </div>
+
 
         <div className="grid gap-4 md:grid-cols-[160px_1fr]">
           <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">

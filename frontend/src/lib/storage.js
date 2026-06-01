@@ -9,10 +9,6 @@ export function setToken(token) {
   window.localStorage.setItem(TOKEN_KEY, token)
 }
 
-export function clearToken() {
-  window.localStorage.removeItem(TOKEN_KEY)
-}
-
 export function getStoredUser() {
   const rawUser = window.localStorage.getItem(USER_KEY)
 
@@ -32,11 +28,7 @@ export function setStoredUser(user) {
   window.localStorage.setItem(USER_KEY, JSON.stringify(user))
 }
 
-export function clearStoredUser() {
-  window.localStorage.removeItem(USER_KEY)
-}
-
 export function clearAuthStorage() {
-  clearToken()
-  clearStoredUser()
+  window.localStorage.removeItem(TOKEN_KEY)
+  window.localStorage.removeItem(USER_KEY)
 }

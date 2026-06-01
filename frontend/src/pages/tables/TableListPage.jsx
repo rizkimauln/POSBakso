@@ -9,7 +9,9 @@ import {
   RotateCcw,
   Search,
   Trash2,
+  Download,
 } from 'lucide-react'
+import { QRCodeCanvas } from 'qrcode.react'
 import { Badge } from '../../components/common/Badge'
 import { Button } from '../../components/common/Button'
 import { DataTable } from '../../components/common/DataTable'
@@ -145,6 +147,17 @@ export function TableListPage() {
     }
   }
 
+  const handleDownloadQr = (table) => {
+    const canvas = document.getElementById(`qr-canvas-${table.id}`)
+    if (canvas) {
+      const url = canvas.toDataURL("image/png")
+      const link = document.createElement("a")
+      link.download = `QR-Meja-${table.table_number}.png`
+      link.href = url
+      link.click()
+    }
+  }
+
   async function handleRegenerateQr(table) {
     const isConfirmed = window.confirm(`Buat ulang QR token untuk meja ${table.table_number}?`)
 
@@ -234,18 +247,29 @@ export function TableListPage() {
             <LinkIcon className="h-4 w-4 shrink-0" />
             <span className="truncate">{customerUrl(table)}</span>
           </div>
-          <Button onClick={() => copyQrLink(table)} size="sm" variant="secondary">
-            <Copy className="h-4 w-4" />
-            {copiedId === table.id ? 'Tersalin' : 'Copy link'}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => copyQrLink(table)} size="sm" variant="secondary">
+              <Copy className="h-4 w-4" />
+              {copiedId === table.id ? 'Tersalin' : 'Copy link'}
+            </Button>
+            <Button onClick={() => handleDownloadQr(table)} size="sm" variant="secondary">
+              <Download className="h-4 w-4" />
+              Download QR
+            </Button>
+            <div className="hidden">
+              <QRCodeCanvas
+                id={`qr-canvas-${table.id}`}
+                includeMargin={true}
+                level="H"
+                size={300}
+                value={customerUrl(table)}
+              />
+            </div>
+          </div>
         </div>
       ),
     },
-    {
-      key: 'orders_count',
-      label: 'Riwayat',
-      render: (table) => `${table.orders_count || 0} order`,
-    },
+
     {
       key: 'actions',
       label: '',
@@ -283,25 +307,18 @@ export function TableListPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-        <div>
-          <Badge tone="danger">Master data</Badge>
-          <h2 className="mt-3 text-2xl font-bold text-slate-950">Meja dan QR customer</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Kelola nomor meja, status operasional, dan link QR ordering untuk pelanggan.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <Button onClick={openCreateModal}>
           <Plus className="h-4 w-4" />
           Tambah meja
         </Button>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 p-4">
         <div className="grid gap-3 lg:grid-cols-[1fr_220px_auto] lg:items-end">
           <Input
             id="table-search"
-            label="Cari meja"
+            label="Cari Meja"
             onChange={(event) => updateFilter('search', event.target.value)}
             placeholder="M1, M2..."
             value={filters.search}
@@ -312,22 +329,18 @@ export function TableListPage() {
             onChange={(event) => updateFilter('status', event.target.value)}
             value={filters.status}
           >
-            <option value="">Semua status</option>
+            <option value="">Semua Status</option>
             {tableStatuses.map((status) => (
               <option key={status.value} value={status.value}>
                 {status.label}
               </option>
             ))}
           </Select>
-          <Button onClick={() => loadTables()} variant="secondary">
-            <RefreshCcw className="h-4 w-4" />
-            Refresh
-          </Button>
         </div>
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           {error}
         </div>
       ) : null}
@@ -349,7 +362,7 @@ export function TableListPage() {
                 variant="secondary"
               >
                 <Search className="h-4 w-4" />
-                Reset filter
+                Reset Filter
               </Button>
             ) : (
               <Button onClick={openCreateModal}>
@@ -368,7 +381,7 @@ export function TableListPage() {
       )}
 
       {meta ? (
-        <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 md:flex-row">
+        <div className="flex flex-col items-center justify-between gap-3 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 px-4 py-3 text-sm text-slate-500 md:flex-row">
           <p>
             Halaman {meta.current_page} dari {meta.last_page} · {meta.total} meja
           </p>

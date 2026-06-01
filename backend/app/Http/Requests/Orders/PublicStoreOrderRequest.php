@@ -21,6 +21,7 @@ class PublicStoreOrderRequest extends FormRequest
     {
         return [
             'qr_token' => ['required', 'string', 'exists:tables,qr_token'],
+            'customer_name' => ['required', 'string', 'max:255'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.menu_id' => ['required', 'integer', 'exists:menus,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
@@ -36,6 +37,7 @@ class PublicStoreOrderRequest extends FormRequest
         return [
             'qr_token.required' => 'QR token meja wajib dikirim.',
             'qr_token.exists' => 'QR meja tidak valid atau sudah tidak berlaku.',
+            'customer_name.required' => 'Nama pemesan wajib diisi.',
             'items.required' => 'Item pesanan wajib diisi.',
             'items.array' => 'Item pesanan harus berupa array.',
             'items.min' => 'Minimal ada satu item pesanan.',

@@ -6,13 +6,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
-        Schema::table('orders', function (Blueprint $table): void {
-            $table->string('public_token', 64)->nullable()->unique()->after('id');
-        });
+        if (!Schema::hasColumn('orders', 'public_token')) {
+            Schema::table('orders', function (Blueprint $table): void {
+                $table->string('public_token', 64)->nullable()->unique()->after('id');
+            });
+        }
 
         DB::table('orders')
             ->whereNull('public_token')
@@ -28,9 +29,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('orders', function (Blueprint $table): void {
-            $table->dropUnique(['public_token']);
-            $table->dropColumn('public_token');
-        });
+        if (Schema::hasColumn('orders', 'public_token')) {
+            Schema::table('orders', function (Blueprint $table): void {
+                $table->dropUnique(['public_token']);
+                $table->dropColumn('public_token');
+            });
+        }
     }
 };

@@ -13,7 +13,7 @@ class OrderItemResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $status = $this->item_status;
+
 
         return [
             'id' => $this->id,
@@ -24,7 +24,7 @@ class OrderItemResource extends JsonResource
             'price' => $this->price,
             'subtotal' => $this->price * $this->quantity,
             'notes' => $this->notes,
-            'item_status' => $status instanceof BackedEnum ? $status->value : $status,
+
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

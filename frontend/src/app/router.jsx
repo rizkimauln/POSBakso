@@ -10,7 +10,7 @@ import { TableListPage } from '../pages/tables/TableListPage'
 import { CashierOrderPage } from '../pages/orders/CashierOrderPage'
 import { OrderDetailPage } from '../pages/orders/OrderDetailPage'
 import { CheckoutPage } from '../pages/orders/CheckoutPage'
-import { KdsPage } from '../pages/kds/KdsPage'
+import { IncomingOrdersPage } from '../pages/orders/IncomingOrdersPage'
 import { ReportsPage } from '../pages/reports/ReportsPage'
 import { UserListPage } from '../pages/users/UserListPage'
 import { CustomerMenuPage } from '../pages/customer/CustomerMenuPage'
@@ -46,8 +46,8 @@ export const router = createBrowserRouter([
       { index: true, element: <DashboardPage /> },
       { path: 'orders', element: <CashierOrderPage /> },
       { path: 'orders/:orderId', element: <OrderDetailPage /> },
+      { path: 'incoming-orders', element: <IncomingOrdersPage /> },
       { path: 'checkout', element: <CheckoutPage /> },
-      { path: 'kds', element: <KdsPage /> },
       {
         path: 'categories',
         element: (

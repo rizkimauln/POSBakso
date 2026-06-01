@@ -13,7 +13,6 @@ class OrderResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $orderStatus = $this->order_status;
         $paymentMethod = $this->payment_method;
         $paymentStatus = $this->payment_status;
 
@@ -24,8 +23,10 @@ class OrderResource extends JsonResource
             'table' => new TableResource($this->whenLoaded('table')),
             'user_id' => $this->user_id,
             'user' => new UserResource($this->whenLoaded('user')),
+            'customer_name' => $this->customer_name,
             'total_amount' => $this->total_amount,
-            'order_status' => $orderStatus instanceof BackedEnum ? $orderStatus->value : $orderStatus,
+            'cash_amount' => $this->cash_amount,
+            'change_amount' => $this->change_amount,
             'payment_method' => $paymentMethod instanceof BackedEnum ? $paymentMethod->value : $paymentMethod,
             'payment_status' => $paymentStatus instanceof BackedEnum ? $paymentStatus->value : $paymentStatus,
             'items' => OrderItemResource::collection($this->whenLoaded('orderItems')),

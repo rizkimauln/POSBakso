@@ -21,9 +21,6 @@ return new class extends Migration
         $table->integer('price');
         $table->text('notes')->nullable()->comment('Catatan khusus dari pelanggan');
 
-        // Status per item untuk mempermudah koki di Kitchen Display System
-        $table->enum('item_status', ['pending', 'dimasak', 'selesai'])->default('pending');
-
         $table->timestamps();
     });
 }

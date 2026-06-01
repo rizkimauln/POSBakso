@@ -22,7 +22,7 @@ class StoreMenuRequest extends FormRequest
         return [
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:150'],
-            'description' => ['nullable', 'string', 'max:1000'],
+
             'price' => ['required', 'integer', 'min:0'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'is_active' => ['sometimes', 'boolean'],
@@ -39,6 +39,7 @@ class StoreMenuRequest extends FormRequest
             'category_id.exists' => 'Kategori menu tidak ditemukan.',
             'name.required' => 'Nama menu wajib diisi.',
             'name.max' => 'Nama menu maksimal 150 karakter.',
+
             'price.required' => 'Harga menu wajib diisi.',
             'price.integer' => 'Harga menu harus berupa angka rupiah.',
             'price.min' => 'Harga menu minimal 0.',

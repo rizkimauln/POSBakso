@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\OrderItemStatus;
 use Illuminate\Database\Eloquent\Model;
 
 class OrderItem extends Model
@@ -13,7 +12,6 @@ class OrderItem extends Model
         'quantity',
         'price',
         'notes',
-        'item_status'
     ];
 
     protected function casts(): array
@@ -23,7 +21,6 @@ class OrderItem extends Model
             'menu_id' => 'integer',
             'quantity' => 'integer',
             'price' => 'integer',
-            'item_status' => OrderItemStatus::class,
         ];
     }
 

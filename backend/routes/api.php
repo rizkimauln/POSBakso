@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\KdsController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ReportController;
@@ -41,9 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus']);
     Route::get('orders/{order}/invoice', [OrderController::class, 'invoice']);
     Route::post('orders/{order}/checkout', [OrderController::class, 'checkout']);
-    Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
-    Route::get('kds/orders', [KdsController::class, 'orders']);
-    Route::patch('kds/order-items/{orderItem}/status', [KdsController::class, 'updateItemStatus']);
+    Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show', 'update']);
     Route::get('reports/daily', [ReportController::class, 'daily']);
     Route::get('reports/sales', [ReportController::class, 'sales']);
     Route::get('reports/best-selling-menus', [ReportController::class, 'bestSellingMenus']);

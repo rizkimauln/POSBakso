@@ -7,7 +7,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class StoreOrderRequest extends FormRequest
+class UpdateOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {

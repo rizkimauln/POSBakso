@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BarChart3, CalendarDays, CreditCard, RefreshCcw, TrendingUp } from 'lucide-react'
+import { BarChart3, CalendarDays, CreditCard, Download, RefreshCcw, TrendingUp } from 'lucide-react'
 import { Badge } from '../../components/common/Badge'
 import { Button } from '../../components/common/Button'
 import { DataTable } from '../../components/common/DataTable'
@@ -12,7 +12,7 @@ import { formatRupiah } from '../../lib/currency'
 import { reportService } from '../../services/reportService'
 
 const paymentMethods = [
-  { value: '', label: 'Semua metode' },
+  { value: '', label: 'Semua Metode Pembayaran' },
   { value: 'tunai', label: 'Tunai' },
   { value: 'qris', label: 'QRIS' },
 ]
@@ -29,12 +29,10 @@ function startOfMonth() {
 
 export function ReportsPage() {
   const [filters, setFilters] = useState({
-    date: today(),
     from: startOfMonth(),
     to: today(),
     payment_method: '',
   })
-  const [dailyReport, setDailyReport] = useState(null)
   const [salesReport, setSalesReport] = useState(null)
   const [bestSelling, setBestSelling] = useState(null)
   const [error, setError] = useState('')
@@ -48,8 +46,7 @@ export function ReportsPage() {
       const sharedParams = {
         payment_method: nextFilters.payment_method || undefined,
       }
-      const [daily, sales, bestSellingMenus] = await Promise.all([
-        reportService.daily({ date: nextFilters.date, ...sharedParams }),
+      const [sales, bestSellingMenus] = await Promise.all([
         reportService.sales({
           from: nextFilters.from,
           to: nextFilters.to,
@@ -62,7 +59,6 @@ export function ReportsPage() {
         }),
       ])
 
-      setDailyReport(daily)
       setSalesReport(sales)
       setBestSelling(bestSellingMenus)
     } catch (requestError) {
@@ -75,23 +71,20 @@ export function ReportsPage() {
   useEffect(() => {
     let isMounted = true
     const initialFilters = {
-      date: today(),
       from: startOfMonth(),
       to: today(),
       payment_method: '',
     }
 
     Promise.all([
-      reportService.daily({ date: initialFilters.date }),
       reportService.sales({ from: initialFilters.from, to: initialFilters.to }),
       reportService.bestSellingMenus({ from: initialFilters.from, to: initialFilters.to }),
     ])
-      .then(([daily, sales, bestSellingMenus]) => {
+      .then(([sales, bestSellingMenus]) => {
         if (!isMounted) {
           return
         }
 
-        setDailyReport(daily)
         setSalesReport(sales)
         setBestSelling(bestSellingMenus)
       })
@@ -113,6 +106,43 @@ export function ReportsPage() {
 
   function updateFilter(name, value) {
     setFilters((current) => ({ ...current, [name]: value }))
+  }
+
+  function exportToCsv() {
+    if (!salesReport || !bestSelling) return
+
+    let csvContent = "LAPORAN PENJUALAN\n"
+    csvContent += `Rentang,${filters.from},sampai,${filters.to}\n`
+    csvContent += `Total Revenue,${salesReport.total_revenue || 0}\n`
+    csvContent += `Total Order,${salesReport.total_orders || 0}\n`
+    csvContent += `AOV,${salesReport.average_order_value || 0}\n\n`
+
+    csvContent += "BREAKDOWN PEMBAYARAN\n"
+    csvContent += "Metode,Total Order,Total Revenue\n"
+    if (salesReport.by_payment_method) {
+      salesReport.by_payment_method.forEach(row => {
+        csvContent += `${row.payment_method},${row.total_orders},${row.total_revenue}\n`
+      })
+    }
+    csvContent += "\n"
+
+    csvContent += "MENU TERLARIS\n"
+    csvContent += "Menu,Terjual (porsi),Revenue\n"
+    if (bestSelling.items) {
+      bestSelling.items.forEach(row => {
+        const menuName = `"${(row.menu_name || '').replace(/"/g, '""')}"`
+        csvContent += `${menuName},${row.total_quantity},${row.total_revenue}\n`
+      })
+    }
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `Laporan_Penjualan_${filters.from}_to_${filters.to}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const columns = [
@@ -139,39 +169,22 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-        <div>
-          <Badge tone="danger">Reports</Badge>
-          <h2 className="mt-3 text-2xl font-bold text-slate-950">Laporan penjualan</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Pantau pendapatan harian, ringkasan rentang tanggal, dan menu terlaris.
-          </p>
-        </div>
-        <Button onClick={() => loadReports()} variant="secondary">
-          <RefreshCcw className="h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[180px_180px_180px_180px_auto] xl:items-end">
-          <Input
-            id="report-date"
-            label="Tanggal harian"
-            onChange={(event) => updateFilter('date', event.target.value)}
-            type="date"
-            value={filters.date}
-          />
+      <section className="rounded-2xl bg-white shadow-sm border border-slate-200/60 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-slate-950">Filter Laporan</h3>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto] xl:items-end">
           <Input
             id="report-from"
-            label="Dari"
+            label="Dari Tanggal"
             onChange={(event) => updateFilter('from', event.target.value)}
             type="date"
             value={filters.from}
           />
           <Input
             id="report-to"
-            label="Sampai"
+            label="Sampai Tanggal"
             onChange={(event) => updateFilter('to', event.target.value)}
             type="date"
             value={filters.to}
@@ -188,103 +201,87 @@ export function ReportsPage() {
               </option>
             ))}
           </Select>
-          <Button onClick={() => loadReports()}>
-            <BarChart3 className="h-4 w-4" />
-            Terapkan
-          </Button>
+          <div className="flex gap-2">
+            <Button className="flex-1 justify-center" onClick={() => loadReports()}>
+              <BarChart3 className="h-4 w-4" />
+              Terapkan
+            </Button>
+            <Button className="flex-1 justify-center" onClick={exportToCsv} variant="secondary">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </div>
         </div>
       </section>
 
       {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           {error}
         </div>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-xl border border-slate-200 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <Badge tone="danger">Harian</Badge>
-            <CalendarDays className="h-5 w-5 text-slate-400" />
-          </div>
-          <p className="mt-5 text-2xl font-bold text-slate-950">
-            {formatRupiah(dailyReport?.total_revenue)}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">{dailyReport?.total_orders || 0} order</p>
-        </article>
-        <article className="rounded-xl border border-slate-200 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <Badge tone="info">Rentang</Badge>
-            <TrendingUp className="h-5 w-5 text-slate-400" />
-          </div>
-          <p className="mt-5 text-2xl font-bold text-slate-950">
-            {formatRupiah(salesReport?.total_revenue)}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">{salesReport?.total_orders || 0} order</p>
-        </article>
-        <article className="rounded-xl border border-slate-200 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <Badge tone="success">AOV</Badge>
-            <CreditCard className="h-5 w-5 text-slate-400" />
-          </div>
-          <p className="mt-5 text-2xl font-bold text-slate-950">
-            {formatRupiah(salesReport?.average_order_value)}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">Rata-rata order</p>
-        </article>
-        <article className="rounded-xl border border-slate-200 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <Badge tone="warning">Top menu</Badge>
-            <BarChart3 className="h-5 w-5 text-slate-400" />
-          </div>
-          <p className="mt-5 text-2xl font-bold text-slate-950">
-            {bestSelling?.items?.[0]?.menu_name || '-'}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">
-            {bestSelling?.items?.[0]?.total_quantity || 0} porsi
-          </p>
-        </article>
-      </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.7fr_1.3fr]">
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h3 className="font-semibold text-slate-950">Breakdown pembayaran</h3>
-          <div className="mt-4 space-y-3">
+
+      <section className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr] items-stretch">
+        <div className="flex flex-col h-full rounded-2xl bg-white shadow-sm border border-slate-200/60 overflow-hidden">
+          <div className="border-b border-slate-100 px-6 py-5 bg-slate-50/50">
+            <h3 className="font-bold text-slate-950">Breakdown Pembayaran</h3>
+            <p className="text-xs text-slate-500 mt-1">Berdasarkan rentang waktu yang dipilih</p>
+          </div>
+          <div className="flex-1 p-6 space-y-4">
             {salesReport?.by_payment_method?.length ? (
-              salesReport.by_payment_method.map((row) => (
-                <div className="rounded-lg bg-slate-50 p-4" key={row.payment_method}>
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold uppercase text-slate-950">{row.payment_method}</p>
-                      <p className="text-sm text-slate-500">{row.total_orders} order</p>
+              <div className="flex flex-col h-full justify-between gap-4">
+                <div className="space-y-4">
+                  {salesReport.by_payment_method.map((row) => (
+                    <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm" key={row.payment_method}>
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-bold uppercase text-slate-950">{row.payment_method}</p>
+                          <p className="text-sm font-medium text-slate-500">{row.total_orders} transaksi sukses</p>
+                        </div>
+                        <p className="text-lg font-bold tracking-tight text-slate-950">{formatRupiah(row.total_revenue)}</p>
+                      </div>
                     </div>
-                    <p className="font-bold text-slate-950">{formatRupiah(row.total_revenue)}</p>
+                  ))}
+                </div>
+
+                <div className="mt-auto border-t border-dashed border-slate-200 pt-4">
+                  <div className="rounded-xl bg-indigo-50/50 p-4 border border-indigo-100">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-bold uppercase text-indigo-950">TOTAL KESELURUHAN</p>
+                        <p className="text-sm font-medium text-indigo-700/80">{salesReport.total_orders} transaksi sukses</p>
+                      </div>
+                      <p className="text-xl font-bold tracking-tight text-indigo-600">{formatRupiah(salesReport.total_revenue)}</p>
+                    </div>
                   </div>
                 </div>
-              ))
+              </div>
             ) : (
-              <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-500">
-                Belum ada pembayaran pada rentang ini.
-              </p>
+              <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
+                <p className="text-sm font-medium text-slate-500">Belum ada transaksi pada rentang ini.</p>
+              </div>
             )}
           </div>
         </div>
 
-        <div className="space-y-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-5">
-            <h3 className="font-semibold text-slate-950">Menu terlaris</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Berdasarkan quantity menu dari order lunas.
-            </p>
+        <div className="flex flex-col h-full rounded-2xl bg-white shadow-sm border border-slate-200/60 overflow-hidden">
+          <div className="border-b border-slate-100 px-6 py-5 bg-slate-50/50">
+            <h3 className="font-bold text-slate-950">Menu Terlaris</h3>
+            <p className="text-xs text-slate-500 mt-1">Berdasarkan porsi menu dari order yang sudah lunas</p>
           </div>
-          {bestSelling?.items?.length ? (
-            <DataTable columns={columns} data={bestSelling.items} />
-          ) : (
-            <EmptyState
-              description="Menu terlaris akan muncul saat ada order lunas pada filter ini."
-              title="Belum ada menu terlaris"
-            />
-          )}
+          <div className="flex-1">
+            {bestSelling?.items?.length ? (
+              <DataTable columns={columns} data={bestSelling.items} />
+            ) : (
+              <div className="p-8">
+                <EmptyState
+                  description="Data menu terlaris akan muncul saat ada pesanan yang lunas pada filter ini."
+                  title="Belum ada data penjualan"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </div>

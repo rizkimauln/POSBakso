@@ -23,6 +23,7 @@ class CheckoutOrderRequest extends FormRequest
     {
         return [
             'payment_method' => ['required', Rule::in(PaymentMethod::values())],
+            'cash_amount' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
@@ -34,6 +35,8 @@ class CheckoutOrderRequest extends FormRequest
         return [
             'payment_method.required' => 'Metode pembayaran wajib dipilih.',
             'payment_method.in' => 'Metode pembayaran tidak valid.',
+            'cash_amount.integer' => 'Nominal uang harus berupa angka.',
+            'cash_amount.min' => 'Nominal uang minimal 0.',
         ];
     }
 

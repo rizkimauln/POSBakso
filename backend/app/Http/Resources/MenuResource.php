@@ -20,7 +20,6 @@ class MenuResource extends JsonResource
             'category_id' => $this->category_id,
             'category' => new CategoryResource($this->whenLoaded('category')),
             'name' => $this->name,
-            'description' => $this->description,
             'price' => $this->price,
             'image_path' => $this->image_path,
             'image_url' => $imageUrl,

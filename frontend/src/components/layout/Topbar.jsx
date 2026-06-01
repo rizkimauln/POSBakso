@@ -1,11 +1,7 @@
 import { Menu, Search } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { navigationItems } from '../../config/navigation'
-import { useAuth } from '../../hooks/useAuth'
-import { Badge } from '../common/Badge'
-
 export function Topbar({ onOpenMenu }) {
-  const { user } = useAuth()
   const location = useLocation()
   const currentItem =
     [...navigationItems]
@@ -24,17 +20,14 @@ export function Topbar({ onOpenMenu }) {
           <Menu className="h-5 w-5" />
         </button>
         <div>
-          <p className="text-xs font-semibold uppercase text-slate-400">Workspace</p>
           <h1 className="text-lg font-bold text-slate-950">{currentItem.label}</h1>
         </div>
       </div>
 
       <div className="hidden h-10 w-72 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-400 md:flex">
         <Search className="h-4 w-4" />
-        Cari data operasional
+        Cari Data Operasional
       </div>
-
-      <Badge tone="info">{user?.role || 'guest'}</Badge>
     </header>
   )
 }

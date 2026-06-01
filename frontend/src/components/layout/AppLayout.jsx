@@ -8,13 +8,15 @@ export function AppLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
-    <div className="flex min-h-screen bg-slate-100">
-      <div className="hidden lg:block">
+    <div className="flex min-h-screen bg-slate-100 print:bg-white print:block">
+      <div className="sticky top-0 hidden h-screen lg:block print:hidden">
         <Sidebar />
       </div>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onOpenMenu={() => setIsMobileMenuOpen(true)} />
-        <main className="flex-1 p-4 lg:p-6">
+      <div className="flex min-w-0 flex-1 flex-col print:block">
+        <div className="print:hidden">
+          <Topbar onOpenMenu={() => setIsMobileMenuOpen(true)} />
+        </div>
+        <main className="flex-1 p-4 lg:p-6 print:p-0 print:m-0 print:block">
           <Outlet />
         </main>
       </div>

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, CreditCard, RefreshCcw, Search } from 'lucide-react'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { CheckCircle2, CreditCard, Edit2, RefreshCcw, Search, AlertCircle, Banknote } from 'lucide-react'
 import { Badge } from '../../components/common/Badge'
 import { Button } from '../../components/common/Button'
 import { EmptyState } from '../../components/common/EmptyState'
 import { LoadingState } from '../../components/common/LoadingState'
+import { Input } from '../../components/common/Input'
 import { Select } from '../../components/common/Select'
 import { InvoicePanel } from '../../components/pos/InvoicePanel'
 import { useToast } from '../../hooks/useToast'
@@ -20,13 +22,18 @@ export function CheckoutPage() {
   const [orders, setOrders] = useState([])
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [paymentMethod, setPaymentMethod] = useState('tunai')
+  const [nominalUang, setNominalUang] = useState('')
   const [receiptOrder, setReceiptOrder] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailLoading, setIsDetailLoading] = useState(false)
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const { showToast } = useToast()
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const autoSelectOrderId = searchParams.get('orderId')
 
   async function loadOrders() {
     setIsLoading(true)
@@ -35,14 +42,19 @@ export function CheckoutPage() {
     try {
       const response = await orderService.list({
         payment_status: 'belum_lunas',
-        order_status: 'selesai',
+        order_status: 'diproses',
         per_page: 100,
       })
       const nextOrders = response.data || []
       setOrders(nextOrders)
 
-      if (selectedOrder && !nextOrders.some((order) => order.id === selectedOrder.id)) {
-        setSelectedOrder(null)
+      if (autoSelectOrderId && !selectedOrder) {
+        const orderToSelect = nextOrders.find((o) => o.id === Number(autoSelectOrderId))
+        if (orderToSelect) {
+          selectOrder(orderToSelect)
+        }
+      } else if (selectedOrder && !nextOrders.some((order) => order.id === selectedOrder.id)) {
+        setSelectedOrder((prev) => prev?.payment_status === 'lunas' ? prev : null)
       }
     } catch (requestError) {
       setError(getApiMessage(requestError, 'Order checkout gagal dimuat.'))
@@ -55,10 +67,15 @@ export function CheckoutPage() {
     let isMounted = true
 
     orderService
-      .list({ payment_status: 'belum_lunas', order_status: 'selesai', per_page: 100 })
+      .list({ payment_status: 'belum_lunas', order_status: 'diproses', per_page: 100 })
       .then((response) => {
         if (isMounted) {
-          setOrders(response.data || [])
+          const fetchedOrders = response.data || []
+          setOrders(fetchedOrders)
+          if (autoSelectOrderId) {
+            const orderToSelect = fetchedOrders.find((o) => o.id === Number(autoSelectOrderId))
+            if (orderToSelect) selectOrder(orderToSelect)
+          }
         }
       })
       .catch((requestError) => {
@@ -80,6 +97,7 @@ export function CheckoutPage() {
   async function selectOrder(order) {
     setIsDetailLoading(true)
     setReceiptOrder(null)
+    setNominalUang('')
     setError('')
 
     try {
@@ -101,12 +119,14 @@ export function CheckoutPage() {
     setFieldErrors({})
 
     try {
-      const paidOrder = await orderService.checkout(selectedOrder.id, paymentMethod)
+      const paidOrder = await orderService.checkout(selectedOrder.id, paymentMethod, {
+        cash_amount: paymentMethod === 'tunai' ? Number(nominalUang) : null
+      })
       setReceiptOrder(paidOrder)
       setSelectedOrder(paidOrder)
       showToast({
-        title: `Order #${paidOrder.id} lunas`,
-        description: 'Receipt siap dicetak.',
+        title: `Order ${String(paidOrder.id).padStart(4, '0')} lunas`,
+        description: 'Pembayaran berhasil disimpan.',
         tone: 'success',
       })
       await loadOrders()
@@ -122,37 +142,40 @@ export function CheckoutPage() {
     return <LoadingState label="Memuat checkout..." />
   }
 
+  const filteredOrders = orders.filter((order) => {
+    if (!searchQuery) return true
+    const q = searchQuery.toLowerCase()
+    const tableNo = String(order.table?.table_number || '').toLowerCase()
+    const customer = String(order.customer_name || '').toLowerCase()
+    const orderId = String(order.id).toLowerCase()
+    return tableNo.includes(q) || customer.includes(q) || orderId.includes(q)
+  })
+
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-        <div>
-          <Badge tone="danger">Checkout</Badge>
-          <h2 className="mt-3 text-2xl font-bold text-slate-950">Checkout dan invoice</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Pilih order selesai yang belum lunas, verifikasi invoice, lalu proses pembayaran.
-          </p>
-        </div>
-        <Button onClick={loadOrders} variant="secondary">
-          <RefreshCcw className="h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
+    <div className="flex flex-col h-[calc(100vh-7rem)] space-y-6 print:h-auto print:block">
 
       {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-          {error}
+        <div className="rounded-2xl border border-red-200 bg-red-50/50 p-4 shadow-sm print:hidden">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-red-100 p-1.5 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+            </div>
+            <p className="mt-1 text-sm font-medium text-red-800">{error}</p>
+          </div>
         </div>
       ) : null}
 
       {receiptOrder ? (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-700" />
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-sm print:hidden">
+          <div className="flex items-start gap-4">
+            <div className="rounded-full bg-emerald-100 p-2 text-emerald-600 shadow-sm">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
             <div>
-              <p className="font-semibold text-emerald-900">
-                Order #{receiptOrder.id} berhasil checkout
+              <p className="text-lg font-bold text-emerald-900">
+                Order {String(receiptOrder.id).padStart(4, '0')} berhasil dibayar
               </p>
-              <p className="text-sm text-emerald-700">
+              <p className="mt-1 text-sm font-medium text-emerald-700">
                 Receipt siap dicetak atau dilihat kembali dari detail order.
               </p>
             </div>
@@ -160,92 +183,202 @@ export function CheckoutPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-5 xl:grid-cols-[390px_1fr]">
-        <section className="space-y-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <h3 className="font-semibold text-slate-950">Order belum lunas</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Hanya order selesai yang bisa diproses checkout.
-            </p>
+      <div className="grid gap-6 lg:grid-cols-[360px_1fr] xl:grid-cols-[400px_1fr] flex-1 min-h-0 print:block print:grid-cols-none">
+
+        {/* Left Column: Order List */}
+        <section className="flex flex-col gap-4 overflow-y-auto pr-2 pb-4 print:hidden print:overflow-visible">
+          <div className="rounded-2xl bg-white shadow-sm border border-slate-200/60 p-4">
+            <Input
+              id="search-checkout-order"
+              placeholder="Cari meja atau nama pemesan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
-          {orders.length ? (
-            <div className="space-y-3">
-              {orders.map((order) => (
-                <button
-                  className={[
-                    'w-full rounded-xl border bg-white p-4 text-left transition hover:border-red-200 hover:bg-red-50',
-                    selectedOrder?.id === order.id ? 'border-red-300 bg-red-50' : 'border-slate-200',
-                  ].join(' ')}
-                  key={order.id}
-                  onClick={() => selectOrder(order)}
-                  type="button"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-slate-950">Order #{order.id}</p>
-                      <p className="mt-1 text-sm text-slate-500">
-                        Meja {order.table?.table_number || '-'} · {order.user?.name || 'Customer QR'}
+          {filteredOrders.length ? (
+            <div className="flex flex-col gap-3">
+              {filteredOrders.map((order) => {
+                const isSelected = selectedOrder?.id === order.id;
+                return (
+                  <button
+                    className={`group relative flex w-full flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left transition-all duration-200 ${isSelected
+                        ? 'border-indigo-300 bg-indigo-50/50 shadow-md ring-1 ring-indigo-500/30'
+                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm'
+                      }`}
+                    key={order.id}
+                    onClick={() => selectOrder(order)}
+                    type="button"
+                  >
+                    {/* Visual indicator for selection */}
+                    {isSelected && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600"></div>
+                    )}
+
+                    <div className="flex flex-col gap-3">
+                      <p className={`font-bold ${isSelected ? 'text-indigo-950' : 'text-slate-950'}`}>
+                        Order #{String(order.id).padStart(4, '0')}
                       </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-500">
+                          Meja {order.table?.table_number || '-'} <span className="mx-1.5 text-slate-300">•</span> {order.customer_name || 'Tanpa Nama'}
+                        </p>
+                        <p className={`text-lg font-bold tracking-tight ${isSelected ? 'text-indigo-700' : 'text-slate-950'}`}>
+                          {formatRupiah(order.total_amount)}
+                        </p>
+                      </div>
                     </div>
-                    <Badge tone="warning">Belum lunas</Badge>
-                  </div>
-                  <p className="mt-4 text-xl font-bold text-slate-950">
-                    {formatRupiah(order.total_amount)}
-                  </p>
-                </button>
-              ))}
+                  </button>
+                )
+              })}
             </div>
           ) : (
-            <EmptyState
-              action={
-                <Button onClick={loadOrders} variant="secondary">
-                  <Search className="h-4 w-4" />
-                  Cek ulang
-                </Button>
-              }
-              description="Order akan muncul setelah status dapur selesai dan pembayaran belum lunas."
-              title="Tidak ada order checkout"
-            />
+            <div className="rounded-2xl border border-slate-200/60 bg-white shadow-sm overflow-hidden">
+              <EmptyState
+                action={
+                  <Button onClick={loadOrders} variant="secondary" className="mt-2">
+                    <RefreshCcw className="h-4 w-4 mr-2" />
+                    Cek ulang
+                  </Button>
+                }
+                description="Semua order sudah lunas atau belum ada pesanan baru dari dapur."
+                title="Tidak ada antrean"
+              />
+            </div>
           )}
         </section>
 
-        <section className="space-y-4">
+        {/* Right Column: Checkout Details */}
+        <section className="flex flex-col h-full min-h-0 pr-2 pb-4 print:static print:block print:overflow-visible">
           {isDetailLoading ? (
-            <LoadingState label="Memuat invoice..." />
+            <div className="rounded-2xl border border-slate-200/60 bg-white p-12 shadow-sm flex justify-center print:hidden">
+              <LoadingState label="Memuat rincian invoice..." />
+            </div>
           ) : selectedOrder ? (
             <>
-              <InvoicePanel order={selectedOrder} />
+              {!receiptOrder ? (
+                <div className="overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200/60 flex flex-col h-full print:hidden">
 
-              {selectedOrder.payment_status === 'belum_lunas' ? (
-                <div className="rounded-xl border border-slate-200 bg-white p-5 print:hidden">
-                  <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-                    <Select
-                      error={fieldErrors.payment_method?.[0]}
-                      id="payment-method"
-                      label="Metode pembayaran"
-                      onChange={(event) => setPaymentMethod(event.target.value)}
-                      value={paymentMethod}
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-5">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-950">Rincian Pesanan</h3>
+                      <p className="mt-0.5 text-sm font-medium text-slate-500">
+                        Order {String(selectedOrder.id).padStart(4, '0')} <span className="mx-1.5 text-slate-300">•</span> Meja {selectedOrder.table?.table_number || '-'}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => navigate(`/app/orders?editId=${selectedOrder.id}`)}
+                      size="sm"
+                      variant="secondary"
+                      className="bg-white hover:bg-slate-100"
                     >
-                      {paymentMethods.map((method) => (
-                        <option key={method.value} value={method.value}>
-                          {method.label}
-                        </option>
-                      ))}
-                    </Select>
-                    <Button isLoading={isCheckingOut} onClick={checkoutOrder}>
-                      <CreditCard className="h-4 w-4" />
-                      Proses checkout
+                      <Edit2 className="h-4 w-4 mr-2" />
+                      Edit Pesanan
                     </Button>
                   </div>
+
+                  {/* Item List */}
+                  <div className="px-6 py-5 flex-1 overflow-y-auto">
+                    <div className="space-y-4">
+                      {(selectedOrder.items || []).map((item) => (
+                        <div key={item.id} className="flex justify-between items-center group">
+                          <div>
+                            <p className="font-bold text-slate-950 group-hover:text-indigo-600 transition-colors">
+                              {item.menu?.name || `Menu #${item.menu_id}`}
+                            </p>
+                            <p className="mt-0.5 text-sm font-medium text-slate-500">
+                              {item.quantity} × {formatRupiah(item.price)}
+                            </p>
+                          </div>
+                          <p className="font-bold text-slate-950 tracking-tight">
+                            {formatRupiah(item.subtotal || item.price * item.quantity)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Payment Form Wrapper */}
+                  <div className="border-t border-slate-100 bg-slate-50/50 p-6 shrink-0">
+
+                    {/* Total */}
+                    <div className="flex items-center justify-between mb-4 px-1">
+                      <p className="font-semibold text-slate-600">Total Tagihan</p>
+                      <p className="text-lg font-bold text-slate-900">
+                        {formatRupiah(selectedOrder.total_amount)}
+                      </p>
+                    </div>
+
+                    <div className="space-y-4 rounded-2xl bg-white p-5 border border-slate-200/80 shadow-sm">
+                      <div className="flex gap-4 items-end">
+                        <div className="flex-1">
+                          <Select
+                            error={fieldErrors.payment_method?.[0]}
+                            id="payment-method"
+                            label="Metode Pembayaran"
+                            onChange={(event) => {
+                              setPaymentMethod(event.target.value)
+                              setNominalUang('')
+                            }}
+                            value={paymentMethod}
+                          >
+                            {paymentMethods.map((method) => (
+                              <option key={method.value} value={method.value}>
+                                {method.label}
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
+
+                        {paymentMethod === 'tunai' && (
+                          <div className="flex-1">
+                            <Input
+                              id="nominal-uang"
+                              label="Uang Diterima (Rp)"
+                              onChange={(e) => setNominalUang(e.target.value)}
+                              placeholder="Masukkan jumlah"
+                              type="number"
+                              value={nominalUang}
+                            />
+                          </div>
+                        )}
+
+                        <Button
+                          className="px-8 py-2.5 shrink-0"
+                          isLoading={isCheckingOut}
+                          onClick={checkoutOrder}
+                          disabled={paymentMethod === 'tunai' && (Number(nominalUang) < selectedOrder.total_amount)}
+                        >
+                          Proses
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ) : null}
+              ) : (
+                <div className="relative print:static">
+                  <div className="absolute right-0 top-0 mt-4 mr-4 print:hidden z-10">
+                    <Button onClick={() => {
+                      setReceiptOrder(null);
+                      setSelectedOrder(null);
+                    }} variant="secondary" size="sm" className="bg-white hover:bg-slate-50 border-slate-200">
+                      Tutup Receipt
+                    </Button>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200/60 bg-white shadow-sm overflow-hidden">
+                    <InvoicePanel order={receiptOrder} />
+                  </div>
+                </div>
+              )}
             </>
           ) : (
-            <EmptyState
-              description="Pilih salah satu order di kiri untuk melihat invoice dan memproses pembayaran."
-              title="Pilih order checkout"
-            />
+            <div className="rounded-2xl border border-slate-200/60 bg-white shadow-sm overflow-hidden">
+              <EmptyState
+                description="Pilih salah satu order di sebelah kiri untuk melihat detail invoice dan memproses pembayaran."
+                title="Pilih order checkout"
+              />
+            </div>
           )}
         </section>
       </div>

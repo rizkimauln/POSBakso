@@ -163,26 +163,19 @@ export function CategoryListPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-        <div>
-          <Badge tone="danger">Master data</Badge>
-          <h2 className="mt-3 text-2xl font-bold text-slate-950">Kategori menu</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Kelola pengelompokan menu agar kasir dan customer lebih cepat mencari item.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <Button onClick={openCreateModal}>
           <Plus className="h-4 w-4" />
           Tambah kategori
         </Button>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="w-full md:max-w-sm">
             <Input
               id="category-search"
-              label="Cari kategori"
+              label="Cari Kategori"
               onChange={(event) => {
                 setIsLoading(true)
                 setPage(1)
@@ -192,15 +185,11 @@ export function CategoryListPage() {
               value={search}
             />
           </div>
-          <Button onClick={() => loadCategories()} variant="secondary">
-            <RefreshCcw className="h-4 w-4" />
-            Refresh
-          </Button>
         </div>
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           {error}
         </div>
       ) : null}
@@ -221,7 +210,7 @@ export function CategoryListPage() {
                 variant="secondary"
               >
                 <Search className="h-4 w-4" />
-                Reset pencarian
+                Reset Pencarian
               </Button>
             ) : (
               <Button onClick={openCreateModal}>
@@ -240,7 +229,7 @@ export function CategoryListPage() {
       )}
 
       {meta ? (
-        <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 md:flex-row">
+        <div className="flex flex-col items-center justify-between gap-3 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 px-4 py-3 text-sm text-slate-500 md:flex-row">
           <p>
             Halaman {meta.current_page} dari {meta.last_page} · {meta.total} kategori
           </p>

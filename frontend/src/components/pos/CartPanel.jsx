@@ -1,5 +1,6 @@
 import { Minus, Plus, ReceiptText, Trash2 } from 'lucide-react'
 import { Button } from '../common/Button'
+import { Input } from '../common/Input'
 import { Select } from '../common/Select'
 import { formatRupiah } from '../../lib/currency'
 
@@ -13,31 +14,42 @@ export function CartPanel({
   onSubmit,
   onTableChange,
   selectedTableId,
+  customerName,
+  onCustomerNameChange,
   tables,
 }) {
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   return (
-    <aside className="sticky top-4 space-y-4 rounded-xl border border-slate-200 bg-white p-4">
-      <div>
-        <p className="text-sm font-semibold uppercase text-red-700">Cart kasir</p>
-        <h2 className="mt-1 text-xl font-bold text-slate-950">Order baru</h2>
+    <aside className="sticky top-4 space-y-4 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 p-4">
+      <div className="text-center pb-2">
+        <h2 className="text-lg font-bold uppercase tracking-wide text-red-700">Cart Kasir</h2>
       </div>
 
-      <Select
-        error={error?.table_id}
-        id="order-table"
-        label="Pilih meja"
-        onChange={(event) => onTableChange(event.target.value)}
-        value={selectedTableId}
-      >
-        <option value="">Pilih meja</option>
-        {tables.map((table) => (
-          <option key={table.id} value={table.id}>
-            {table.table_number} · {table.status}
-          </option>
-        ))}
-      </Select>
+      <div className="space-y-3">
+        <Input
+          error={error?.customer_name}
+          id="customer-name"
+          label="Nama Pemesan"
+          onChange={(event) => onCustomerNameChange(event.target.value)}
+          placeholder="Masukkan nama"
+          value={customerName}
+        />
+        <Select
+          error={error?.table_id}
+          id="order-table"
+          label="Pilih meja"
+          onChange={(event) => onTableChange(event.target.value)}
+          value={selectedTableId}
+        >
+          <option value="">Pilih meja</option>
+          {tables.map((table) => (
+            <option key={table.id} value={table.id}>
+              {table.table_number} · {table.status}
+            </option>
+          ))}
+        </Select>
+      </div>
 
       <div className="max-h-[46vh] space-y-3 overflow-y-auto pr-1">
         {cartItems.length ? (
@@ -102,15 +114,26 @@ export function CartPanel({
           <p className="text-sm text-slate-500">Total preview</p>
           <p className="text-2xl font-bold text-slate-950">{formatRupiah(total)}</p>
         </div>
-        <Button
-          className="mt-4 w-full"
-          disabled={!cartItems.length}
-          isLoading={isSubmitting}
-          onClick={onSubmit}
-        >
-          <ReceiptText className="h-4 w-4" />
-          Submit order
-        </Button>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Button
+            className="w-full whitespace-nowrap px-2"
+            disabled={!cartItems.length}
+            isLoading={isSubmitting}
+            onClick={() => onSubmit('later')}
+            variant="secondary"
+          >
+            Bayar Nanti
+          </Button>
+          <Button
+            className="w-full whitespace-nowrap px-2"
+            disabled={!cartItems.length}
+            isLoading={isSubmitting}
+            onClick={() => onSubmit('now')}
+          >
+            <ReceiptText className="mr-2 h-4 w-4" />
+            Bayar Sekarang
+          </Button>
+        </div>
       </div>
     </aside>
   )

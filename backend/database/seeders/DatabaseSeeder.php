@@ -2,8 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Enums\OrderItemStatus;
-use App\Enums\OrderStatus;
+
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\TableStatus;
@@ -172,48 +171,48 @@ class DatabaseSeeder extends Seeder
         $now = CarbonImmutable::now();
 
         $this->createOrder($tables['M1'], $users['kasir'], [
-            [$menus['bakso_urat'], 1, 'Kuah dipisah', OrderItemStatus::Pending],
-            [$menus['es_teh'], 2, null, OrderItemStatus::Pending],
-        ], OrderStatus::Pending, PaymentStatus::BelumLunas, null, $now->subMinutes(12));
+            [$menus['bakso_urat'], 1, 'Kuah dipisah'],
+            [$menus['es_teh'], 2, null],
+        ], 'pending', PaymentStatus::BelumLunas, null, $now->subMinutes(12));
 
         $this->createOrder($tables['M2'], null, [
-            [$menus['bakso_mercon'], 2, 'Level pedas sedang', OrderItemStatus::Dimasak],
-            [$menus['pangsit'], 2, null, OrderItemStatus::Pending],
-            [$menus['es_jeruk'], 2, null, OrderItemStatus::Selesai],
-        ], OrderStatus::Diproses, PaymentStatus::BelumLunas, null, $now->subMinutes(25));
+            [$menus['bakso_mercon'], 2, 'Level pedas sedang'],
+            [$menus['pangsit'], 2, null],
+            [$menus['es_jeruk'], 2, null],
+        ], 'diproses', PaymentStatus::BelumLunas, null, $now->subMinutes(25));
 
         $this->createOrder($tables['M3'], $users['kasir_sore'], [
-            [$menus['mie_ayam'], 1, 'Tanpa sawi', OrderItemStatus::Selesai],
-            [$menus['teh_tawar'], 1, null, OrderItemStatus::Selesai],
-        ], OrderStatus::Selesai, PaymentStatus::BelumLunas, null, $now->subMinutes(40));
+            [$menus['mie_ayam'], 1, 'Tanpa sawi'],
+            [$menus['teh_tawar'], 1, null],
+        ], 'selesai', PaymentStatus::BelumLunas, null, $now->subMinutes(40));
 
         $this->createOrder($tables['M4'], $users['kasir'], [
-            [$menus['paket_komplit'], 1, null, OrderItemStatus::Selesai],
-            [$menus['air_mineral'], 1, null, OrderItemStatus::Selesai],
-        ], OrderStatus::Selesai, PaymentStatus::Lunas, PaymentMethod::Qris, $now->subHours(2));
+            [$menus['paket_komplit'], 1, null],
+            [$menus['air_mineral'], 1, null],
+        ], 'selesai', PaymentStatus::Lunas, PaymentMethod::Qris, $now->subHours(2));
 
         $this->createOrder($tables['M5'], $users['kasir'], [
-            [$menus['bakso_campur'], 2, null, OrderItemStatus::Selesai],
-            [$menus['lontong'], 2, null, OrderItemStatus::Selesai],
-            [$menus['es_teh'], 2, null, OrderItemStatus::Selesai],
-        ], OrderStatus::Selesai, PaymentStatus::Lunas, PaymentMethod::Tunai, $now->subHours(4));
+            [$menus['bakso_campur'], 2, null],
+            [$menus['lontong'], 2, null],
+            [$menus['es_teh'], 2, null],
+        ], 'selesai', PaymentStatus::Lunas, PaymentMethod::Tunai, $now->subHours(4));
 
         $this->createOrder($tables['M6'], null, [
-            [$menus['paket_keluarga'], 1, 'Untuk dibagi empat mangkuk', OrderItemStatus::Selesai],
-            [$menus['tahu_bakso'], 4, null, OrderItemStatus::Selesai],
-        ], OrderStatus::Selesai, PaymentStatus::Lunas, PaymentMethod::Qris, $now->subDay()->setTime(19, 10));
+            [$menus['paket_keluarga'], 1, 'Untuk dibagi empat mangkuk'],
+            [$menus['tahu_bakso'], 4, null],
+        ], 'selesai', PaymentStatus::Lunas, PaymentMethod::Qris, $now->subDay()->setTime(19, 10));
 
         $this->createOrder($tables['M7'], $users['kasir_sore'], [
-            [$menus['bakso_telor'], 1, null, OrderItemStatus::Selesai],
-            [$menus['mie_yamin'], 1, 'Sambal terpisah', OrderItemStatus::Selesai],
-            [$menus['es_jeruk'], 2, null, OrderItemStatus::Selesai],
-        ], OrderStatus::Selesai, PaymentStatus::Lunas, PaymentMethod::Tunai, $now->subDays(2)->setTime(13, 25));
+            [$menus['bakso_telor'], 1, null],
+            [$menus['mie_yamin'], 1, 'Sambal terpisah'],
+            [$menus['es_jeruk'], 2, null],
+        ], 'selesai', PaymentStatus::Lunas, PaymentMethod::Tunai, $now->subDays(2)->setTime(13, 25));
 
         $this->createOrder($tables['M8'], $users['kasir'], [
-            [$menus['bakso_halusan'], 3, null, OrderItemStatus::Selesai],
-            [$menus['pangsit'], 3, null, OrderItemStatus::Selesai],
-            [$menus['es_teh'], 3, null, OrderItemStatus::Selesai],
-        ], OrderStatus::Selesai, PaymentStatus::Lunas, PaymentMethod::Tunai, $now->subDays(5)->setTime(12, 5));
+            [$menus['bakso_halusan'], 3, null],
+            [$menus['pangsit'], 3, null],
+            [$menus['es_teh'], 3, null],
+        ], 'selesai', PaymentStatus::Lunas, PaymentMethod::Tunai, $now->subDays(5)->setTime(12, 5));
 
         $tables['M1']->update(['status' => TableStatus::Terisi->value]);
         $tables['M2']->update(['status' => TableStatus::Terisi->value]);
@@ -221,13 +220,13 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * @param array<int, array{0: Menu, 1: int, 2: string|null, 3: OrderItemStatus}> $items
+     * @param array<int, array{0: Menu, 1: int, 2: string|null}> $items
      */
     private function createOrder(
         Table $table,
         ?User $user,
         array $items,
-        OrderStatus $orderStatus,
+        string $orderStatus,
         PaymentStatus $paymentStatus,
         ?PaymentMethod $paymentMethod,
         CarbonImmutable $createdAt
@@ -236,8 +235,9 @@ class DatabaseSeeder extends Seeder
             'public_token' => Str::random(48),
             'table_id' => $table->id,
             'user_id' => $user?->id,
+            'customer_name' => 'Tamu ' . $table->table_number,
             'total_amount' => collect($items)->sum(fn (array $item): int => $item[0]->price * $item[1]),
-            'order_status' => $orderStatus->value,
+            'order_status' => $orderStatus,
             'payment_method' => $paymentMethod?->value,
             'payment_status' => $paymentStatus->value,
         ]);
@@ -246,14 +246,13 @@ class DatabaseSeeder extends Seeder
         $order->updated_at = $createdAt;
         $order->save();
 
-        foreach ($items as [$menu, $quantity, $notes, $itemStatus]) {
+        foreach ($items as [$menu, $quantity, $notes]) {
             $orderItem = new OrderItem([
                 'order_id' => $order->id,
                 'menu_id' => $menu->id,
                 'quantity' => $quantity,
                 'price' => $menu->price,
                 'notes' => $notes,
-                'item_status' => $itemStatus->value,
             ]);
 
             $orderItem->created_at = $createdAt;

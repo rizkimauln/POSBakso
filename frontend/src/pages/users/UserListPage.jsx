@@ -176,25 +176,18 @@ export function UserListPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-        <div>
-          <Badge tone="danger">Admin only</Badge>
-          <h2 className="mt-3 text-2xl font-bold text-slate-950">User management</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Kelola akun admin dan kasir. Password tidak pernah ditampilkan.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <Button onClick={openCreateModal}>
           <Plus className="h-4 w-4" />
           Tambah user
         </Button>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 p-4">
         <div className="grid gap-3 lg:grid-cols-[1fr_220px_auto] lg:items-end">
           <Input
             id="user-search"
-            label="Cari user"
+            label="Cari Pengguna"
             onChange={(event) => updateFilter('search', event.target.value)}
             placeholder="Nama atau email..."
             value={filters.search}
@@ -205,19 +198,15 @@ export function UserListPage() {
             onChange={(event) => updateFilter('role', event.target.value)}
             value={filters.role}
           >
-            <option value="">Semua role</option>
+            <option value="">Semua Peran</option>
             <option value="admin">Admin</option>
             <option value="kasir">Kasir</option>
           </Select>
-          <Button onClick={() => loadUsers()} variant="secondary">
-            <RefreshCcw className="h-4 w-4" />
-            Refresh
-          </Button>
         </div>
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           {error}
         </div>
       ) : null}
@@ -239,7 +228,7 @@ export function UserListPage() {
                 variant="secondary"
               >
                 <Search className="h-4 w-4" />
-                Reset filter
+                Reset Filter
               </Button>
             ) : (
               <Button onClick={openCreateModal}>
@@ -256,7 +245,7 @@ export function UserListPage() {
       )}
 
       {meta ? (
-        <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 md:flex-row">
+        <div className="flex flex-col items-center justify-between gap-3 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 px-4 py-3 text-sm text-slate-500 md:flex-row">
           <p>
             Halaman {meta.current_page} dari {meta.last_page} · {meta.total} user
           </p>

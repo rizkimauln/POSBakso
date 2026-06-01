@@ -1,23 +1,6 @@
 import { Printer } from 'lucide-react'
-import { Badge } from '../common/Badge'
 import { Button } from '../common/Button'
 import { formatRupiah } from '../../lib/currency'
-
-const orderStatusLabel = {
-  pending: 'Pending',
-  diproses: 'Diproses',
-  selesai: 'Selesai',
-}
-
-const paymentStatusLabel = {
-  belum_lunas: 'Belum lunas',
-  lunas: 'Lunas',
-}
-
-const paymentMethodLabel = {
-  tunai: 'Tunai',
-  qris: 'QRIS',
-}
 
 function formatDateTime(value) {
   if (!value) {
@@ -36,69 +19,106 @@ export function InvoicePanel({ order, showPrint = true }) {
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 print:border-0 print:p-0">
-      <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-4 md:flex-row md:items-start print:border-slate-300">
+    <section className="print-area mx-auto w-full max-w-sm rounded-2xl bg-white p-6 text-slate-950 shadow-sm ring-1 ring-slate-200 print:shadow-none print:ring-0">
+      {/* Header */}
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-slate-950">Bakso Istigfar Mang Dadang</h2>
+        <p className="mt-1 text-sm text-slate-500">Jl. Raya Bakso No. 88, Jakarta</p>
+        <p className="text-sm text-slate-500">Telp: 0812-3456-7890</p>
+      </div>
+
+      <div className="my-4 border-b-2 border-dashed border-slate-200 print:border-black"></div>
+
+      {/* Meta Info */}
+      <div className="grid grid-cols-2 gap-y-3 text-sm text-slate-950">
         <div>
-          <p className="text-sm font-semibold uppercase text-red-700">Invoice</p>
-          <h2 className="mt-1 text-2xl font-bold text-slate-950">Order #{order.id}</h2>
-          <p className="mt-1 text-sm text-slate-500">{formatDateTime(order.created_at)}</p>
+          <p className="text-xs text-slate-500">No. Order</p>
+          <p className="font-semibold">{String(order.id).padStart(4, '0')}</p>
         </div>
-        <div className="flex flex-wrap gap-2 md:justify-end">
-          <Badge tone={order.order_status === 'selesai' ? 'success' : 'warning'}>
-            {orderStatusLabel[order.order_status] || order.order_status}
-          </Badge>
-          <Badge tone={order.payment_status === 'lunas' ? 'success' : 'danger'}>
-            {paymentStatusLabel[order.payment_status] || order.payment_status}
-          </Badge>
-          {showPrint ? (
-            <Button className="print:hidden" onClick={() => window.print()} size="sm" variant="secondary">
-              <Printer className="h-4 w-4" />
-              Print
-            </Button>
-          ) : null}
+        <div className="text-right">
+          <p className="text-xs text-slate-500">Tanggal</p>
+          <p className="font-semibold">{formatDateTime(order.created_at)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">Kasir</p>
+          <p className="font-semibold">{order.user?.name || 'Customer QR'}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-slate-500">Meja</p>
+          <p className="font-semibold">{order.table?.table_number || '-'}</p>
         </div>
       </div>
 
-      <div className="grid gap-3 border-b border-slate-200 py-4 text-sm md:grid-cols-3 print:border-slate-300">
-        <div>
-          <p className="text-slate-500">Meja</p>
-          <p className="mt-1 font-semibold text-slate-950">{order.table?.table_number || '-'}</p>
-        </div>
-        <div>
-          <p className="text-slate-500">Kasir</p>
-          <p className="mt-1 font-semibold text-slate-950">{order.user?.name || 'Customer QR'}</p>
-        </div>
-        <div>
-          <p className="text-slate-500">Pembayaran</p>
-          <p className="mt-1 font-semibold text-slate-950">
-            {paymentMethodLabel[order.payment_method] || '-'}
-          </p>
-        </div>
-      </div>
+      <div className="my-4 border-b-2 border-dashed border-slate-200 print:border-black"></div>
 
-      <div className="divide-y divide-slate-100 print:divide-slate-300">
+      {/* Items */}
+      <div className="space-y-3">
         {(order.items || []).map((item) => (
-          <div className="grid gap-2 py-3 md:grid-cols-[1fr_auto] md:items-start" key={item.id}>
-            <div>
-              <p className="font-semibold text-slate-950">
-                {item.quantity}x {item.menu?.name || `Menu #${item.menu_id}`}
+          <div key={item.id} className="text-sm text-slate-950">
+            <p className="font-semibold">{item.menu?.name || `Menu #${item.menu_id}`}</p>
+            <div className="flex justify-between">
+              <p className="text-slate-500">
+                {item.quantity} x {formatRupiah(item.price)}
               </p>
-              {item.notes ? <p className="mt-1 text-sm text-slate-500">{item.notes}</p> : null}
-              <p className="mt-1 text-xs text-slate-400">{formatRupiah(item.price)} / item</p>
+              <p className="font-semibold">{formatRupiah(item.subtotal || item.price * item.quantity)}</p>
             </div>
-            <p className="font-semibold text-slate-950 md:text-right">
-              {formatRupiah(item.subtotal || item.price * item.quantity)}
-            </p>
+            {item.notes && <p className="mt-0.5 text-xs text-slate-500">Catatan: {item.notes}</p>}
           </div>
         ))}
       </div>
 
-      <div className="border-t border-slate-200 pt-4 print:border-slate-300">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-slate-500">Total</p>
-          <p className="text-3xl font-bold text-slate-950">{formatRupiah(order.total_amount)}</p>
-        </div>
+      <div className="my-4 border-b-2 border-dashed border-slate-200 print:border-black"></div>
+
+      {/* Total */}
+      <div className="flex items-center justify-between">
+        <p className="font-bold text-slate-950">TOTAL</p>
+        <p className="text-xl font-bold text-slate-950">{formatRupiah(order.total_amount)}</p>
       </div>
+
+      <div className="my-4 border-b-2 border-dashed border-slate-200 print:border-black"></div>
+
+      {/* Payment Info */}
+      <div className="grid grid-cols-2 gap-y-2 text-sm text-slate-950">
+        <div>
+          <p className="text-xs text-slate-500">Status Pembayaran</p>
+          <p className="font-semibold">{order.payment_status === 'lunas' ? 'LUNAS' : 'BELUM LUNAS'}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-slate-500">Metode Pembayaran</p>
+          <p className="font-semibold uppercase">{order.payment_method || '-'}</p>
+        </div>
+        {order.payment_method === 'tunai' && order.cash_amount != null && (
+          <>
+            <div className="col-span-2 my-2 border-b border-dashed border-slate-200 print:border-black"></div>
+            <div>
+              <p className="text-xs text-slate-500">Tunai</p>
+              <p className="font-semibold">{formatRupiah(order.cash_amount)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-slate-500">Kembalian</p>
+              <p className="font-semibold">{formatRupiah(order.change_amount)}</p>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="my-4 border-b-2 border-dashed border-slate-200 print:border-black"></div>
+
+      {/* Footer */}
+      <div className="text-center text-sm text-slate-500">
+        <p>Terima kasih atas kunjungan Anda!</p>
+        <p>Silakan datang kembali.</p>
+      </div>
+
+      {/* Print Button */}
+      {showPrint ? (
+        <div className="mt-8 text-center print:hidden">
+          <Button onClick={() => window.print()} className="w-full justify-center">
+            <Printer className="mr-2 h-4 w-4" />
+            Cetak Setruk
+          </Button>
+        </div>
+      ) : null}
     </section>
   )
 }

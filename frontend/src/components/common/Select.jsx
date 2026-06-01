@@ -16,7 +16,7 @@ export function Select({
       ) : null}
       <select
         className={[
-          'h-11 w-full rounded-lg border bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-red-700 focus:ring-2 focus:ring-red-100',
+          'h-11 w-full rounded-lg border bg-white pl-3 pr-10 text-sm text-slate-900 outline-none transition focus:border-red-700 focus:ring-2 focus:ring-red-100 text-ellipsis overflow-hidden whitespace-nowrap',
           error ? 'border-red-500' : 'border-slate-300',
           className,
         ].join(' ')}

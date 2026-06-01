@@ -11,6 +11,11 @@ export const orderService = {
     return response.data.data
   },
 
+  async update(orderId, payload) {
+    const response = await api.put(`/orders/${orderId}`, payload)
+    return response.data.data
+  },
+
   async getInvoice(orderId) {
     const response = await api.get(`/orders/${orderId}/invoice`)
     return response.data.data
@@ -21,9 +26,17 @@ export const orderService = {
     return response.data.data
   },
 
-  async checkout(orderId, paymentMethod) {
+  async updateStatus(orderId, orderStatus) {
+    const response = await api.patch(`/orders/${orderId}/status`, {
+      order_status: orderStatus
+    })
+    return response.data.data
+  },
+
+  async checkout(orderId, paymentMethod, additionalData = {}) {
     const response = await api.post(`/orders/${orderId}/checkout`, {
       payment_method: paymentMethod,
+      ...additionalData
     })
     return response.data.data
   },

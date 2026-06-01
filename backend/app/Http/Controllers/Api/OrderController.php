@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Actions\Orders\CheckoutOrderAction;
 use App\Actions\Orders\CreateOrderAction;
+use App\Actions\Orders\UpdateOrderAction;
 use App\Events\OrderCreated;
 use App\Events\OrderStatusUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Orders\CheckoutOrderRequest;
 use App\Http\Requests\Orders\PublicStoreOrderRequest;
 use App\Http\Requests\Orders\StoreOrderRequest;
-use App\Http\Requests\Orders\UpdateOrderStatusRequest;
+use App\Http\Requests\Orders\UpdateOrderRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\Table;
@@ -25,6 +26,7 @@ class OrderController extends Controller
     public function __construct(
         private readonly OrderService $orderService,
         private readonly CreateOrderAction $createOrderAction,
+        private readonly UpdateOrderAction $updateOrderAction,
         private readonly CheckoutOrderAction $checkoutOrderAction
     ) {
     }
@@ -34,7 +36,7 @@ class OrderController extends Controller
         $perPage = min((int) $request->integer('per_page', 10), 100);
 
         $orders = $this->orderService->paginate(
-            $request->only(['order_status', 'payment_status', 'table_id']),
+            $request->only(['payment_status', 'order_status', 'table_id']),
             $perPage
         );
 
@@ -53,7 +55,12 @@ class OrderController extends Controller
         $user = $request->user();
 
         try {
-            $order = $this->createOrderAction->execute($table, $request->validated('items'), $user);
+            $order = $this->createOrderAction->execute(
+                $table, 
+                $request->validated('customer_name'), 
+                $request->validated('items'), 
+                $user
+            );
         } catch (ValidationException $exception) {
             return ApiResponse::error('Validasi gagal', 422, $exception->errors());
         }
@@ -74,7 +81,11 @@ class OrderController extends Controller
             ->firstOrFail();
 
         try {
-            $order = $this->createOrderAction->execute($table, $request->validated('items'));
+            $order = $this->createOrderAction->execute(
+                $table, 
+                $request->validated('customer_name'), 
+                $request->validated('items')
+            );
         } catch (ValidationException $exception) {
             return ApiResponse::error('Validasi gagal', 422, $exception->errors());
         }
@@ -85,6 +96,27 @@ class OrderController extends Controller
             'Order berhasil dibuat',
             new OrderResource($order),
             201
+        );
+    }
+
+    public function update(UpdateOrderRequest $request, Order $order)
+    {
+        $table = Table::query()->findOrFail($request->validated('table_id'));
+
+        try {
+            $order = $this->updateOrderAction->execute(
+                $order,
+                $table,
+                $request->validated('customer_name'),
+                $request->validated('items')
+            );
+        } catch (ValidationException $exception) {
+            return ApiResponse::error('Validasi gagal', 422, $exception->errors());
+        }
+
+        return ApiResponse::success(
+            'Order berhasil diperbarui',
+            new OrderResource($order)
         );
     }
 
@@ -112,17 +144,25 @@ class OrderController extends Controller
         );
     }
 
-    public function updateStatus(UpdateOrderStatusRequest $request, Order $order)
+    public function updateStatus(Request $request, Order $order)
     {
-        $order = $this->orderService->updateStatus($order, $request->validated('order_status'));
+        $validated = $request->validate([
+            'order_status' => ['required', 'in:pending,diproses,selesai']
+        ]);
+
+        $order->update([
+            'order_status' => $validated['order_status']
+        ]);
 
         event(new OrderStatusUpdated($order));
 
         return ApiResponse::success(
             'Status order berhasil diperbarui',
-            new OrderResource($order)
+            new OrderResource($this->orderService->findDetailed($order))
         );
     }
+
+
 
     public function invoice(Order $order)
     {
@@ -135,7 +175,11 @@ class OrderController extends Controller
     public function checkout(CheckoutOrderRequest $request, Order $order)
     {
         try {
-            $order = $this->checkoutOrderAction->execute($order, $request->validated('payment_method'));
+            $order = $this->checkoutOrderAction->execute(
+                $order,
+                $request->validated('payment_method'),
+                $request->validated('cash_amount')
+            );
         } catch (ValidationException $exception) {
             return ApiResponse::error('Validasi gagal', 422, $exception->errors());
         }

@@ -15,7 +15,7 @@ export function MenuGrid({
 }) {
   return (
     <section className="space-y-4">
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 p-4">
         <div className="grid gap-3 lg:grid-cols-[1fr_220px] lg:items-end">
           <Input
             id="order-menu-search"
@@ -50,29 +50,39 @@ export function MenuGrid({
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {menus.map((menu) => (
             <article
-              className="flex min-h-44 flex-col justify-between rounded-xl border border-slate-200 bg-white p-4"
+              className="flex min-h-44 flex-col justify-between overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100"
               key={menu.id}
             >
               <div>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-slate-950">{menu.name}</p>
-                    <p className="mt-1 line-clamp-2 text-sm text-slate-500">
-                      {menu.description || 'Tanpa deskripsi'}
-                    </p>
-                  </div>
-                  <Badge tone="success">Aktif</Badge>
+                <div className="h-32 w-full bg-slate-100">
+                  {menu.image_url ? (
+                    <img alt="" className="h-full w-full object-cover" src={menu.image_url} />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-slate-300 font-bold text-xl">
+                      {menu.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
                 </div>
-                <p className="mt-4 text-lg font-bold text-slate-950">
-                  {formatRupiah(menu.price)}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">{menu.category?.name || '-'}</p>
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-950">{menu.name}</p>
+                      <p className="mt-1 text-xs text-slate-500">{menu.category?.name || '-'}</p>
+                    </div>
+                    <Badge tone="success">Aktif</Badge>
+                  </div>
+                  <p className="mt-3 text-lg font-bold text-slate-950">
+                    {formatRupiah(menu.price)}
+                  </p>
+                </div>
               </div>
 
-              <Button className="mt-4 w-full" onClick={() => onAddItem(menu)} variant="secondary">
-                <Plus className="h-4 w-4" />
-                Tambah
-              </Button>
+              <div className="px-4 pb-4">
+                <Button className="w-full" onClick={() => onAddItem(menu)} variant="secondary">
+                  <Plus className="h-4 w-4" />
+                  Tambah
+                </Button>
+              </div>
             </article>
           ))}
         </div>

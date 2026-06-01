@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Model;
@@ -12,11 +11,14 @@ class Order extends Model
     protected $fillable = [
         'public_token',
         'table_id',
+        'customer_name',
         'user_id',
         'total_amount',
-        'order_status',
+        'cash_amount',
+        'change_amount',
         'payment_method',
-        'payment_status'
+        'payment_status',
+        'order_status',
     ];
 
     protected function casts(): array
@@ -25,7 +27,8 @@ class Order extends Model
             'table_id' => 'integer',
             'user_id' => 'integer',
             'total_amount' => 'integer',
-            'order_status' => OrderStatus::class,
+            'cash_amount' => 'integer',
+            'change_amount' => 'integer',
             'payment_method' => PaymentMethod::class,
             'payment_status' => PaymentStatus::class,
         ];

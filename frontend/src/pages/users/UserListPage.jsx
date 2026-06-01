@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Edit, Plus, RefreshCcw, Search, Trash2 } from 'lucide-react'
+import { Edit, Plus, Search, Trash2 } from 'lucide-react'
 import { Badge } from '../../components/common/Badge'
 import { Button } from '../../components/common/Button'
 import { DataTable } from '../../components/common/DataTable'
@@ -10,6 +10,7 @@ import { Select } from '../../components/common/Select'
 import { useDebounce } from '../../hooks/useDebounce'
 import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../hooks/useToast'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { getApiMessage } from '../../lib/api'
 import { userService } from '../../services/userService'
 import { UserFormModal } from './UserFormModal'
@@ -81,6 +82,21 @@ export function UserListPage() {
       isMounted = false
     }
   }, [debouncedSearch, filters.role, page])
+
+  useAutoRefresh(async () => {
+    try {
+      const response = await userService.list({
+        page,
+        per_page: 10,
+        search: debouncedSearch,
+        role: filters.role,
+      })
+      setUsers(response.data || [])
+      setMeta(response.meta || null)
+    } catch {
+      // Keep the last user list during a background refresh failure.
+    }
+  })
 
   function updateFilter(name, value) {
     setIsLoading(true)

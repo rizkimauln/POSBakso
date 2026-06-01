@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Edit, Plus, RefreshCcw, Search, Trash2 } from 'lucide-react'
+import { Edit, Plus, Search, Trash2 } from 'lucide-react'
 import { Badge } from '../../components/common/Badge'
 import { Button } from '../../components/common/Button'
 import { DataTable } from '../../components/common/DataTable'
@@ -8,6 +8,7 @@ import { Input } from '../../components/common/Input'
 import { LoadingState } from '../../components/common/LoadingState'
 import { useDebounce } from '../../hooks/useDebounce'
 import { useToast } from '../../hooks/useToast'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { getApiMessage } from '../../lib/api'
 import { categoryService } from '../../services/categoryService'
 import { CategoryFormModal } from './CategoryFormModal'
@@ -72,6 +73,16 @@ export function CategoryListPage() {
       isMounted = false
     }
   }, [debouncedSearch, page])
+
+  useAutoRefresh(async () => {
+    try {
+      const response = await categoryService.list({ page, search: debouncedSearch, per_page: 10 })
+      setCategories(response.data || [])
+      setMeta(response.meta || null)
+    } catch {
+      // Keep the last category list during a background refresh failure.
+    }
+  })
 
   function openCreateModal() {
     setFormState({ isOpen: true, category: null })

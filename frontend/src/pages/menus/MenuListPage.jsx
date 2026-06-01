@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Edit, Plus, RefreshCcw, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react'
+import { Edit, Plus, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react'
 import { Badge } from '../../components/common/Badge'
 import { Button } from '../../components/common/Button'
 import { DataTable } from '../../components/common/DataTable'
@@ -9,6 +9,7 @@ import { LoadingState } from '../../components/common/LoadingState'
 import { Select } from '../../components/common/Select'
 import { useDebounce } from '../../hooks/useDebounce'
 import { useToast } from '../../hooks/useToast'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { getApiMessage } from '../../lib/api'
 import { formatRupiah } from '../../lib/currency'
 import { categoryService } from '../../services/categoryService'
@@ -87,6 +88,26 @@ export function MenuListPage() {
       isMounted = false
     }
   }, [debouncedSearch, filters.category_id, filters.is_active, page])
+
+  useAutoRefresh(async () => {
+    try {
+      const [categoryResponse, menuResponse] = await Promise.all([
+        categoryService.list({ per_page: 100 }),
+        menuService.list({
+          page,
+          per_page: 10,
+          search: debouncedSearch,
+          category_id: filters.category_id,
+          is_active: filters.is_active,
+        }),
+      ])
+      setCategories(categoryResponse.data || [])
+      setMenus(menuResponse.data || [])
+      setMeta(menuResponse.meta || null)
+    } catch {
+      // Keep the last menu list during a background refresh failure.
+    }
+  })
 
   function updateFilter(name, value) {
     setIsLoading(true)

@@ -5,7 +5,6 @@ import {
   Link as LinkIcon,
   Plus,
   QrCode,
-  RefreshCcw,
   RotateCcw,
   Search,
   Trash2,
@@ -22,6 +21,7 @@ import { Select } from '../../components/common/Select'
 import { tableStatuses } from '../../config/tableStatuses'
 import { useDebounce } from '../../hooks/useDebounce'
 import { useToast } from '../../hooks/useToast'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { getApiMessage } from '../../lib/api'
 import { tableService } from '../../services/tableService'
 import { TableFormModal } from './TableFormModal'
@@ -100,6 +100,21 @@ export function TableListPage() {
       isMounted = false
     }
   }, [debouncedSearch, filters.status, page])
+
+  useAutoRefresh(async () => {
+    try {
+      const response = await tableService.list({
+        page,
+        per_page: 10,
+        search: debouncedSearch,
+        status: filters.status,
+      })
+      setTables(response.data || [])
+      setMeta(response.meta || null)
+    } catch {
+      // Keep the last table list during a background refresh failure.
+    }
+  })
 
   function updateFilter(name, value) {
     setIsLoading(true)

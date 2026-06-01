@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { CheckCircle2, Search, AlertCircle, RefreshCcw, ChefHat, Play } from 'lucide-react'
-import { Badge } from '../../components/common/Badge'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { AlertCircle, RefreshCcw, Play } from 'lucide-react'
 import { Button } from '../../components/common/Button'
 import { EmptyState } from '../../components/common/EmptyState'
 import { LoadingState } from '../../components/common/LoadingState'
@@ -20,11 +18,13 @@ export function IncomingOrdersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailLoading, setIsDetailLoading] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const isPollingRef = useRef(false)
   const { showToast } = useToast()
-  const navigate = useNavigate()
 
-  async function loadOrders() {
-    setIsLoading(true)
+  const loadOrders = useCallback(async ({ showLoading = true } = {}) => {
+    if (showLoading) {
+      setIsLoading(true)
+    }
     setError('')
 
     try {
@@ -35,38 +35,35 @@ export function IncomingOrdersPage() {
       })
       const nextOrders = (response.data || []).reverse()
       setOrders(nextOrders)
-
-      if (selectedOrder && !nextOrders.some((order) => order.id === selectedOrder.id)) {
-        setSelectedOrder(null)
-      }
+      setSelectedOrder((currentOrder) => (
+        currentOrder && !nextOrders.some((order) => order.id === currentOrder.id)
+          ? null
+          : currentOrder
+      ))
     } catch (requestError) {
       setError(getApiMessage(requestError, 'Daftar pesanan gagal dimuat.'))
     } finally {
-      setIsLoading(false)
+      if (showLoading) {
+        setIsLoading(false)
+      }
     }
-  }
+  }, [])
 
   useEffect(() => {
     let isMounted = true
 
-    orderService
-      .list({ payment_status: 'belum_lunas', order_status: 'pending', per_page: 100 })
-      .then((response) => {
-        if (isMounted) {
-          const fetchedOrders = (response.data || []).reverse()
-          setOrders(fetchedOrders)
-        }
-      })
-      .catch((requestError) => {
-        if (isMounted) {
-          setError(getApiMessage(requestError, 'Daftar pesanan gagal dimuat.'))
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setIsLoading(false)
-        }
-      })
+    const initialLoadTimeout = window.setTimeout(() => {
+      loadOrders()
+    }, 0)
+
+    const pollingInterval = window.setInterval(() => {
+      if (isMounted && !document.hidden && !isPollingRef.current) {
+        isPollingRef.current = true
+        loadOrders({ showLoading: false }).finally(() => {
+          isPollingRef.current = false
+        })
+      }
+    }, 5000)
 
     const channel = getEcho().private('kds.orders')
     channel.listen('.order.created', (event) => {
@@ -85,10 +82,12 @@ export function IncomingOrdersPage() {
     })
 
     return () => {
+      window.clearTimeout(initialLoadTimeout)
+      window.clearInterval(pollingInterval)
       getEcho().leave('private-kds.orders')
       isMounted = false
     }
-  }, [showToast])
+  }, [loadOrders, showToast])
 
   async function selectOrder(order) {
     setIsDetailLoading(true)

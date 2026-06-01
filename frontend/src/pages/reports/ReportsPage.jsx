@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BarChart3, CalendarDays, CreditCard, Download, RefreshCcw, TrendingUp } from 'lucide-react'
-import { Badge } from '../../components/common/Badge'
+import { BarChart3, Download } from 'lucide-react'
 import { Button } from '../../components/common/Button'
 import { DataTable } from '../../components/common/DataTable'
 import { EmptyState } from '../../components/common/EmptyState'
@@ -10,6 +9,7 @@ import { Select } from '../../components/common/Select'
 import { getApiMessage } from '../../lib/api'
 import { formatRupiah } from '../../lib/currency'
 import { reportService } from '../../services/reportService'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 
 const paymentMethods = [
   { value: '', label: 'Semua Metode Pembayaran' },
@@ -103,6 +103,22 @@ export function ReportsPage() {
       isMounted = false
     }
   }, [])
+
+  useAutoRefresh(async () => {
+    try {
+      const sharedParams = {
+        payment_method: filters.payment_method || undefined,
+      }
+      const [sales, bestSellingMenus] = await Promise.all([
+        reportService.sales({ from: filters.from, to: filters.to, ...sharedParams }),
+        reportService.bestSellingMenus({ from: filters.from, to: filters.to, ...sharedParams }),
+      ])
+      setSalesReport(sales)
+      setBestSelling(bestSellingMenus)
+    } catch {
+      // Keep the last report data during a background refresh failure.
+    }
+  })
 
   function updateFilter(name, value) {
     setFilters((current) => ({ ...current, [name]: value }))

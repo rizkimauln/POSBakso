@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import { CheckCircle2, CreditCard, Edit2, RefreshCcw, Search, AlertCircle, Banknote } from 'lucide-react'
-import { Badge } from '../../components/common/Badge'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { CheckCircle2, Edit2, RefreshCcw, AlertCircle } from 'lucide-react'
 import { Button } from '../../components/common/Button'
 import { EmptyState } from '../../components/common/EmptyState'
 import { LoadingState } from '../../components/common/LoadingState'
@@ -9,6 +8,7 @@ import { Input } from '../../components/common/Input'
 import { Select } from '../../components/common/Select'
 import { InvoicePanel } from '../../components/pos/InvoicePanel'
 import { useToast } from '../../hooks/useToast'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { getApiMessage, getValidationErrors } from '../../lib/api'
 import { formatRupiah } from '../../lib/currency'
 import { orderService } from '../../services/orderService'
@@ -35,8 +35,8 @@ export function CheckoutPage() {
   const navigate = useNavigate()
   const autoSelectOrderId = searchParams.get('orderId')
 
-  async function loadOrders() {
-    setIsLoading(true)
+  async function loadOrders({ showLoading = true } = {}) {
+    if (showLoading) setIsLoading(true)
     setError('')
 
     try {
@@ -59,9 +59,11 @@ export function CheckoutPage() {
     } catch (requestError) {
       setError(getApiMessage(requestError, 'Order checkout gagal dimuat.'))
     } finally {
-      setIsLoading(false)
+      if (showLoading) setIsLoading(false)
     }
   }
+
+  useAutoRefresh(() => loadOrders({ showLoading: false }))
 
   useEffect(() => {
     let isMounted = true
@@ -92,7 +94,7 @@ export function CheckoutPage() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [autoSelectOrderId])
 
   async function selectOrder(order) {
     setIsDetailLoading(true)

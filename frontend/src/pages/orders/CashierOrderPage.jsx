@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
-import { Badge } from '../../components/common/Badge'
-import { Button } from '../../components/common/Button'
 import { LoadingState } from '../../components/common/LoadingState'
 import { CartPanel } from '../../components/pos/CartPanel'
 import { MenuGrid } from '../../components/pos/MenuGrid'
 import { useDebounce } from '../../hooks/useDebounce'
 import { useToast } from '../../hooks/useToast'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { getApiMessage, getValidationErrors } from '../../lib/api'
 import { categoryService } from '../../services/categoryService'
 import { menuService } from '../../services/menuService'
@@ -37,7 +36,7 @@ export function CashierOrderPage() {
   const [error, setError] = useState({})
   const [pageError, setPageError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
-  const [isMenuLoading, setIsMenuLoading] = useState(false)
+  const [isMenuLoading, setIsMenuLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const debouncedSearch = useDebounce(filters.search, 300)
   const { showToast } = useToast()
@@ -72,16 +71,14 @@ export function CashierOrderPage() {
     Promise.all([
       categoryService.list({ per_page: 100 }),
       tableService.list({ per_page: 100 }),
-      menuService.list({ per_page: 100, is_active: 1 }),
     ])
-      .then(([categoryResponse, tableResponse, menuResponse]) => {
+      .then(([categoryResponse, tableResponse]) => {
         if (!isMounted) {
           return
         }
 
         setCategories(categoryResponse.data || [])
         setTables(tableResponse.data || [])
-        setMenus(menuResponse.data || [])
       })
       .catch((requestError) => {
         if (isMounted) {
@@ -113,7 +110,7 @@ export function CashierOrderPage() {
             notes: item.notes || ''
           }))
         )
-      }).catch(err => {
+      }).catch(() => {
         setPageError('Gagal memuat data pesanan untuk diubah.')
       })
     }
@@ -149,6 +146,26 @@ export function CashierOrderPage() {
       isMounted = false
     }
   }, [debouncedSearch, filters.category_id])
+
+  useAutoRefresh(async () => {
+    try {
+      const [categoryResponse, tableResponse, menuResponse] = await Promise.all([
+        categoryService.list({ per_page: 100 }),
+        tableService.list({ per_page: 100 }),
+        menuService.list({
+          per_page: 100,
+          is_active: 1,
+          search: debouncedSearch,
+          category_id: filters.category_id,
+        }),
+      ])
+      setCategories(categoryResponse.data || [])
+      setTables(tableResponse.data || [])
+      setMenus(menuResponse.data || [])
+    } catch {
+      // Keep the current POS data while a background refresh fails.
+    }
+  })
 
   function updateFilter(name, value) {
     setIsMenuLoading(true)

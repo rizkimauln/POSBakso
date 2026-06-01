@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Actions\Orders\CheckoutOrderAction;
 use App\Actions\Orders\CreateOrderAction;
 use App\Actions\Orders\UpdateOrderAction;
+use App\Events\OrderCompleted;
 use App\Events\OrderCreated;
 use App\Events\OrderStatusUpdated;
 use App\Http\Controllers\Controller;
@@ -183,6 +184,8 @@ class OrderController extends Controller
         } catch (ValidationException $exception) {
             return ApiResponse::error('Validasi gagal', 422, $exception->errors());
         }
+
+        event(new OrderCompleted($order));
 
         return ApiResponse::success(
             'Checkout berhasil diproses',

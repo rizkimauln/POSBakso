@@ -15,9 +15,8 @@ import { Button } from '../../components/common/Button'
 import { LoadingState } from '../../components/common/LoadingState'
 import { formatRupiah } from '../../lib/currency'
 import { getApiMessage } from '../../lib/api'
-import { orderService } from '../../services/orderService'
 import { reportService } from '../../services/reportService'
-import { tableService } from '../../services/tableService'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 
 const statusLabel = {
   kosong: 'Kosong',
@@ -52,21 +51,14 @@ export function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   async function fetchDashboardData() {
-    const [dailyReport, bestSelling, ordersResponse, tablesResponse, unpaidOrdersResponse] =
-      await Promise.all([
-        reportService.daily(),
-        reportService.bestSellingMenus(),
-        orderService.list({ per_page: 5 }),
-        tableService.list({ per_page: 100 }),
-        orderService.list({ payment_status: 'belum_lunas', per_page: 100 }),
-      ])
+    const data = await reportService.dashboard()
 
     return {
-      dailyReport,
-      bestSellingItems: bestSelling.items || [],
-      orders: ordersResponse.data || [],
-      tables: tablesResponse.data || [],
-      unpaidOrders: unpaidOrdersResponse.data || [],
+      dailyReport: data.daily_report,
+      bestSellingItems: data.best_selling_items || [],
+      orders: data.orders || [],
+      tables: data.tables || [],
+      unpaidOrders: data.unpaid_orders || [],
     }
   }
 
@@ -107,6 +99,14 @@ export function DashboardPage() {
       isMounted = false
     }
   }, [])
+
+  useAutoRefresh(async () => {
+    try {
+      setDashboard(await fetchDashboardData())
+    } catch {
+      // Keep the last dashboard snapshot during a background refresh failure.
+    }
+  })
 
   const tableSummary = useMemo(() => {
     const summary = {

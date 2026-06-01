@@ -13,7 +13,9 @@ import { AuthContext } from './authContextValue'
 export function AuthProvider({ children }) {
   const [token, setAuthToken] = useState(() => getToken())
   const [user, setUser] = useState(() => getStoredUser())
-  const [isBootstrapping, setIsBootstrapping] = useState(Boolean(getToken()))
+  const [isBootstrapping, setIsBootstrapping] = useState(
+    Boolean(getToken()) && !getStoredUser(),
+  )
 
   const clearSession = useCallback(() => {
     clearAuthStorage()

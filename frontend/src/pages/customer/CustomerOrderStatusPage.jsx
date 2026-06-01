@@ -1,20 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { CheckCircle2, ChefHat, Clock, Home, RefreshCcw, ReceiptText, Utensils } from 'lucide-react'
-import { Badge } from '../../components/common/Badge'
+import { Home, RefreshCcw } from 'lucide-react'
 import { Button } from '../../components/common/Button'
 import { EmptyState } from '../../components/common/EmptyState'
 import { LoadingState } from '../../components/common/LoadingState'
 import { useCustomerOrderChannel } from '../../hooks/useCustomerOrderChannel'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { getApiMessage } from '../../lib/api'
 import { formatRupiah } from '../../lib/currency'
 import { customerService } from '../../services/customerService'
-
-const statusLabel = {
-  belum_lunas: 'Belum Lunas',
-  lunas: 'Lunas',
-}
-
 
 function formatTime(value) {
   if (!value) {
@@ -105,6 +99,13 @@ export function CustomerOrderStatusPage() {
   )
 
   useCustomerOrderChannel(publicToken, realtimeHandlers)
+  useAutoRefresh(async () => {
+    try {
+      setOrder(await customerService.getOrder(publicToken))
+    } catch {
+      // Keep the last known status while a background refresh fails.
+    }
+  })
 
   if (isLoading) {
     return (

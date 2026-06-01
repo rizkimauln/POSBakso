@@ -1,30 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, RefreshCcw, AlertCircle } from 'lucide-react'
-import { Button } from '../../components/common/Button'
+import { ArrowLeft, AlertCircle } from 'lucide-react'
 import { LoadingState } from '../../components/common/LoadingState'
 import { InvoicePanel } from '../../components/pos/InvoicePanel'
 import { getApiMessage } from '../../lib/api'
 import { orderService } from '../../services/orderService'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 
 export function OrderDetailPage() {
   const { orderId } = useParams()
   const [order, setOrder] = useState(null)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
-
-  async function loadOrder() {
-    setIsLoading(true)
-    setError('')
-
-    try {
-      setOrder(await orderService.getInvoice(orderId))
-    } catch (requestError) {
-      setError(getApiMessage(requestError, 'Detail order gagal dimuat.'))
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   useEffect(() => {
     let isMounted = true
@@ -51,6 +38,14 @@ export function OrderDetailPage() {
       isMounted = false
     }
   }, [orderId])
+
+  useAutoRefresh(async () => {
+    try {
+      setOrder(await orderService.getInvoice(orderId))
+    } catch {
+      // Keep showing the last invoice data during a background refresh failure.
+    }
+  })
 
   if (isLoading) {
     return <LoadingState label="Memuat rincian invoice..." />

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AlertCircle, RefreshCcw, Play } from 'lucide-react'
+import { AlertCircle, Bell, BellRing, RefreshCcw, Play } from 'lucide-react'
 import { Button } from '../../components/common/Button'
 import { EmptyState } from '../../components/common/EmptyState'
 import { LoadingState } from '../../components/common/LoadingState'
@@ -18,8 +18,51 @@ export function IncomingOrdersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailLoading, setIsDetailLoading] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [notificationPermission, setNotificationPermission] = useState(
+    () => window.Notification?.permission || 'unsupported',
+  )
   const isPollingRef = useRef(false)
+  const knownOrderIdsRef = useRef(null)
   const { showToast } = useToast()
+
+  const playNotificationSound = useCallback(() => {
+    const AudioContext = window.AudioContext || window.webkitAudioContext
+    if (!AudioContext) return
+
+    const audioContext = new AudioContext()
+    const oscillator = audioContext.createOscillator()
+    const gain = audioContext.createGain()
+
+    oscillator.type = 'sine'
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime)
+    gain.gain.setValueAtTime(0.12, audioContext.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.45)
+    oscillator.connect(gain)
+    gain.connect(audioContext.destination)
+    oscillator.start()
+    oscillator.stop(audioContext.currentTime + 0.45)
+  }, [])
+
+  const notifyNewOrder = useCallback((order) => {
+    const tableNumber = order.table?.table_number || '-'
+    const customerName = order.customer_name || 'Tanpa nama'
+    const description = `Meja ${tableNumber} - ${customerName}`
+
+    showToast({
+      title: 'Pesanan Baru Masuk!',
+      description,
+      tone: 'info',
+    })
+    playNotificationSound()
+
+    if (window.Notification?.permission === 'granted') {
+      new window.Notification('Pesanan baru masuk', {
+        body: description,
+        icon: '/images/Logo Red 1.png',
+        tag: `order-${order.id}`,
+      })
+    }
+  }, [playNotificationSound, showToast])
 
   const loadOrders = useCallback(async ({ showLoading = true } = {}) => {
     if (showLoading) {
@@ -34,6 +77,15 @@ export function IncomingOrdersPage() {
         per_page: 100,
       })
       const nextOrders = (response.data || []).reverse()
+      const nextOrderIds = new Set(nextOrders.map((order) => order.id))
+
+      if (knownOrderIdsRef.current) {
+        nextOrders
+          .filter((order) => !knownOrderIdsRef.current.has(order.id))
+          .forEach(notifyNewOrder)
+      }
+
+      knownOrderIdsRef.current = nextOrderIds
       setOrders(nextOrders)
       setSelectedOrder((currentOrder) => (
         currentOrder && !nextOrders.some((order) => order.id === currentOrder.id)
@@ -47,7 +99,7 @@ export function IncomingOrdersPage() {
         setIsLoading(false)
       }
     }
-  }, [])
+  }, [notifyNewOrder])
 
   useEffect(() => {
     let isMounted = true
@@ -72,12 +124,8 @@ export function IncomingOrdersPage() {
           if (prev.find(o => o.id === event.order.id)) return prev
           return [...prev, event.order]
         })
-
-        showToast({
-          title: 'Pesanan Baru Masuk!',
-          description: `Dari Meja ${event.order.table?.table_number || '-'} (A.n. ${event.order.customer_name})`,
-          tone: 'info',
-        })
+        knownOrderIdsRef.current?.add(event.order.id)
+        notifyNewOrder(event.order)
       }
     })
 
@@ -87,7 +135,30 @@ export function IncomingOrdersPage() {
       getEcho().leave('private-kds.orders')
       isMounted = false
     }
-  }, [loadOrders, showToast])
+  }, [loadOrders, notifyNewOrder])
+
+  async function enableNotifications() {
+    if (!window.Notification) {
+      showToast({
+        title: 'Notifikasi browser tidak tersedia',
+        description: 'Gunakan browser modern seperti Chrome atau Edge.',
+        tone: 'error',
+      })
+      return
+    }
+
+    const permission = await window.Notification.requestPermission()
+    setNotificationPermission(permission)
+
+    if (permission === 'granted') {
+      playNotificationSound()
+      showToast({
+        title: 'Notifikasi pesanan aktif',
+        description: 'Kasir akan menerima alert saat order baru masuk.',
+        tone: 'success',
+      })
+    }
+  }
 
   async function selectOrder(order) {
     setIsDetailLoading(true)
@@ -158,6 +229,17 @@ export function IncomingOrdersPage() {
         {/* Left Column: Order List */}
         <section className="flex flex-col gap-4 overflow-y-auto pr-2 pb-4">
           <div className="rounded-2xl bg-white shadow-sm border border-slate-200/60 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Antrean pelanggan</p>
+              <Button
+                className="h-8 rounded-full px-3 text-xs"
+                onClick={enableNotifications}
+                variant={notificationPermission === 'granted' ? 'secondary' : 'primary'}
+              >
+                {notificationPermission === 'granted' ? <BellRing className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
+                {notificationPermission === 'granted' ? 'Notifikasi aktif' : 'Aktifkan notifikasi'}
+              </Button>
+            </div>
             <Input
               id="search-incoming-order"
               placeholder="Cari meja atau nama pemesan..."

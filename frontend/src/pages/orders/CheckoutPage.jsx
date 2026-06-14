@@ -41,7 +41,6 @@ export function CheckoutPage() {
 
     try {
       const response = await orderService.list({
-        payment_status: 'belum_lunas',
         order_status: 'diproses',
         per_page: 100,
       })
@@ -69,7 +68,7 @@ export function CheckoutPage() {
     let isMounted = true
 
     orderService
-      .list({ payment_status: 'belum_lunas', order_status: 'diproses', per_page: 100 })
+      .list({ order_status: 'diproses', per_page: 100 })
       .then((response) => {
         if (isMounted) {
           const fetchedOrders = response.data || []
@@ -103,7 +102,11 @@ export function CheckoutPage() {
     setError('')
 
     try {
-      setSelectedOrder(await orderService.getInvoice(order.id))
+      const invoice = await orderService.getInvoice(order.id)
+      setSelectedOrder(invoice)
+      if (invoice.payment_method) {
+        setPaymentMethod(invoice.payment_method)
+      }
     } catch (requestError) {
       setError(getApiMessage(requestError, 'Invoice order gagal dimuat.'))
     } finally {
@@ -222,9 +225,18 @@ export function CheckoutPage() {
                         Order #{String(order.id).padStart(4, '0')}
                       </p>
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-slate-500">
-                          Meja {order.table?.table_number || '-'} <span className="mx-1.5 text-slate-300">•</span> {order.customer_name || 'Tanpa Nama'}
-                        </p>
+                        <div className="flex flex-col gap-1.5">
+                          <p className="text-sm font-medium text-slate-500">
+                            {order.order_type === 'take_away' ? 'Bungkus / Take Away' : `Meja ${order.table?.table_number || '-'}`} <span className="mx-1.5 text-slate-300">•</span> {order.customer_name || 'Tanpa Nama'}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            {order.payment_status === 'lunas' ? (
+                              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">LUNAS</span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">BELUM BAYAR</span>
+                            )}
+                          </div>
+                        </div>
                         <p className={`text-lg font-bold tracking-tight ${isSelected ? 'text-indigo-700' : 'text-slate-950'}`}>
                           {formatRupiah(order.total_amount)}
                         </p>
@@ -266,7 +278,7 @@ export function CheckoutPage() {
                     <div>
                       <h3 className="text-lg font-bold text-slate-950">Rincian Pesanan</h3>
                       <p className="mt-0.5 text-sm font-medium text-slate-500">
-                        Order {String(selectedOrder.id).padStart(4, '0')} <span className="mx-1.5 text-slate-300">•</span> Meja {selectedOrder.table?.table_number || '-'}
+                        Order {String(selectedOrder.id).padStart(4, '0')} <span className="mx-1.5 text-slate-300">•</span> {selectedOrder.order_type === 'take_away' ? 'Take Away' : `Meja ${selectedOrder.table?.table_number || '-'}`}
                       </p>
                     </div>
                     <Button
@@ -305,6 +317,14 @@ export function CheckoutPage() {
                   <div className="border-t border-slate-100 bg-slate-50/50 p-6 shrink-0">
 
                     {/* Total */}
+                    {selectedOrder.payment_proof_url && (
+                      <div className="flex items-center justify-between mb-4 px-1">
+                        <p className="font-semibold text-slate-600">Bukti Bayar Pelanggan</p>
+                        <a href={selectedOrder.payment_proof_url} target="_blank" rel="noreferrer" className="text-sm font-bold text-indigo-600 hover:underline">
+                          Lihat Bukti 👁️
+                        </a>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between mb-4 px-1">
                       <p className="font-semibold text-slate-600">Total Tagihan</p>
                       <p className="text-lg font-bold text-slate-900">
@@ -312,50 +332,79 @@ export function CheckoutPage() {
                       </p>
                     </div>
 
-                    <div className="space-y-4 rounded-2xl bg-white p-5 border border-slate-200/80 shadow-sm">
-                      <div className="flex gap-4 items-end">
-                        <div className="flex-1">
-                          <Select
-                            error={fieldErrors.payment_method?.[0]}
-                            id="payment-method"
-                            label="Metode Pembayaran"
-                            onChange={(event) => {
-                              setPaymentMethod(event.target.value)
-                              setNominalUang('')
-                            }}
-                            value={paymentMethod}
-                          >
-                            {paymentMethods.map((method) => (
-                              <option key={method.value} value={method.value}>
-                                {method.label}
-                              </option>
-                            ))}
-                          </Select>
+                    {selectedOrder.payment_status === 'lunas' ? (
+                      <div className="space-y-4 rounded-2xl bg-emerald-50 p-5 border border-emerald-200/80 shadow-sm text-center">
+                        <div className="flex items-center justify-center gap-2 text-emerald-700 font-bold mb-2">
+                          <CheckCircle2 className="h-5 w-5" />
+                          Pesanan Ini Sudah Lunas
                         </div>
-
-                        {paymentMethod === 'tunai' && (
-                          <div className="flex-1">
-                            <Input
-                              id="nominal-uang"
-                              label="Uang Diterima (Rp)"
-                              onChange={(e) => setNominalUang(e.target.value)}
-                              placeholder="Masukkan jumlah"
-                              type="number"
-                              value={nominalUang}
-                            />
-                          </div>
-                        )}
-
                         <Button
-                          className="px-8 py-2.5 shrink-0"
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                          onClick={async () => {
+                            try {
+                              setIsCheckingOut(true);
+                              await orderService.updateStatus(selectedOrder.id, 'selesai');
+                              showToast({ title: 'Pesanan Selesai', description: 'Pesanan telah diselesaikan dan dihapus dari antrean.', tone: 'success' });
+                              setReceiptOrder(selectedOrder);
+                              setSelectedOrder(null);
+                              await loadOrders();
+                            } catch (e) {
+                              setError('Gagal menyelesaikan pesanan.');
+                            } finally {
+                              setIsCheckingOut(false);
+                            }
+                          }}
                           isLoading={isCheckingOut}
-                          onClick={checkoutOrder}
-                          disabled={paymentMethod === 'tunai' && (Number(nominalUang) < selectedOrder.total_amount)}
                         >
-                          Proses
+                          Tandai Pesanan Selesai
                         </Button>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="space-y-4 rounded-2xl bg-white p-5 border border-slate-200/80 shadow-sm">
+                        <div className="flex gap-4 items-end">
+                          <div className="flex-1">
+                            <Select
+                              error={fieldErrors.payment_method?.[0]}
+                              id="payment-method"
+                              label="Metode Pembayaran"
+                              onChange={(event) => {
+                                setPaymentMethod(event.target.value)
+                                setNominalUang('')
+                              }}
+                              value={paymentMethod}
+                            >
+                              {paymentMethods.map((method) => (
+                                <option key={method.value} value={method.value}>
+                                  {method.label}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
+
+                          {paymentMethod === 'tunai' && (
+                            <div className="flex-1">
+                              <Input
+                                id="nominal-uang"
+                                label="Uang Diterima (Rp)"
+                                onChange={(e) => setNominalUang(e.target.value)}
+                                placeholder="Masukkan jumlah"
+                                type="number"
+                                value={nominalUang}
+                              />
+                            </div>
+                          )}
+
+                          <Button
+                            className="px-8 py-2.5 shrink-0"
+                            isLoading={isCheckingOut}
+                            onClick={checkoutOrder}
+                            disabled={paymentMethod === 'tunai' && (Number(nominalUang) < selectedOrder.total_amount)}
+                          >
+                            Proses Bayar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (

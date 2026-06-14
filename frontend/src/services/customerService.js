@@ -24,6 +24,21 @@ export const customerService = {
     return response.data.data
   },
 
+  async listTables() {
+    const response = await api.get('/public/tables')
+    return response.data.data
+  },
+
+  async listReviews() {
+    const response = await api.get('/public/reviews')
+    return response.data.data
+  },
+
+  async submitReview(payload) {
+    const response = await api.post('/public/reviews', payload)
+    return response.data.data
+  },
+
   rememberPublicToken(publicToken) {
     window.localStorage.setItem(LAST_PUBLIC_TOKEN_KEY, publicToken)
   },

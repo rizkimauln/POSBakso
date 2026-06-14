@@ -8,9 +8,17 @@ import {
   Tags,
   Utensils,
   Users,
+  Home,
+  Settings
 } from 'lucide-react'
 
 export const navigationItems = [
+  {
+    label: 'Home',
+    path: '/',
+    icon: Home,
+    roles: ['admin', 'kasir'],
+  },
   {
     label: 'Dashboard',
     path: '/app',
@@ -63,6 +71,12 @@ export const navigationItems = [
     label: 'Pengguna',
     path: '/app/users',
     icon: Users,
+    roles: ['admin'],
+  },
+  {
+    label: 'Pengaturan',
+    path: '/app/settings',
+    icon: Settings,
     roles: ['admin'],
   },
 ]

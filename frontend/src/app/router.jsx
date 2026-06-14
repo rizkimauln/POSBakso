@@ -13,6 +13,8 @@ import { CheckoutPage } from '../pages/orders/CheckoutPage'
 import { IncomingOrdersPage } from '../pages/orders/IncomingOrdersPage'
 import { ReportsPage } from '../pages/reports/ReportsPage'
 import { UserListPage } from '../pages/users/UserListPage'
+import { SettingsPage } from '../pages/settings/SettingsPage'
+import { HomePage } from '../pages/HomePage'
 import { CustomerMenuPage } from '../pages/customer/CustomerMenuPage'
 import { CustomerOrderStatusPage } from '../pages/customer/CustomerOrderStatusPage'
 import { ProtectedRoute, PublicOnlyRoute } from './routeGuards'
@@ -20,7 +22,7 @@ import { ProtectedRoute, PublicOnlyRoute } from './routeGuards'
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate replace to="/app" />,
+    element: <HomePage />,
   },
   {
     element: <AuthLayout />,
@@ -88,12 +90,21 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: 'settings',
+        element: (
+          <ProtectedRoute roles={['admin']}>
+            <SettingsPage />
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
   {
     element: <CustomerLayout />,
     path: '/customer',
     children: [
+      { path: 'menu', element: <CustomerMenuPage /> },
       { path: 'tables/:qrToken', element: <CustomerMenuPage /> },
       { path: 'orders/:publicToken', element: <CustomerOrderStatusPage /> },
     ],

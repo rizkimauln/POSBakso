@@ -72,7 +72,6 @@ export function IncomingOrdersPage() {
 
     try {
       const response = await orderService.list({
-        payment_status: 'belum_lunas',
         order_status: 'pending',
         per_page: 100,
       })
@@ -267,16 +266,33 @@ export function IncomingOrdersPage() {
                     )}
 
                     <div className="flex flex-col gap-3">
-                      <p className={`font-bold ${isSelected ? 'text-indigo-950' : 'text-slate-950'}`}>
-                        Order #{String(order.id).padStart(4, '0')}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-slate-500">
-                          Meja {order.table?.table_number || '-'} <span className="mx-1.5 text-slate-300">•</span> {order.customer_name || 'Tanpa Nama'}
-                        </p>
-                        <p className={`text-lg font-bold tracking-tight ${isSelected ? 'text-indigo-700' : 'text-slate-950'}`}>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className={`font-bold ${isSelected ? 'text-indigo-950' : 'text-slate-950'}`}>
+                            Order #{String(order.id).padStart(4, '0')}
+                          </p>
+                          <p className="mt-0.5 text-sm font-medium text-slate-500">
+                            {order.order_type === 'take_away' ? 'Bungkus / Take Away' : `Meja ${order.table?.table_number || '-'}`}
+                            <span className="mx-1.5 text-slate-300">•</span> {order.customer_name || 'Tanpa Nama'}
+                          </p>
+                        </div>
+                        <p className={`text-lg font-bold tracking-tight shrink-0 ${isSelected ? 'text-indigo-700' : 'text-slate-950'}`}>
                           {formatRupiah(order.total_amount)}
                         </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {order.order_type === 'take_away' ? (
+                          <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-800">Take Away</span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-800">Dine In</span>
+                        )}
+
+                        {order.payment_status === 'lunas' || (order.payment_method === 'qris' && order.payment_proof_url) ? (
+                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Sudah Bayar</span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-700">Belum Bayar</span>
+                        )}
                       </div>
                     </div>
                   </button>
@@ -313,7 +329,7 @@ export function IncomingOrdersPage() {
                 <div>
                   <h3 className="text-lg font-bold text-slate-950">Detail Pesanan Baru</h3>
                   <p className="mt-0.5 text-sm font-medium text-slate-500">
-                    Kode: #{String(selectedOrder.id).padStart(4, '0')} <span className="mx-1.5 text-slate-300">•</span> Meja {selectedOrder.table?.table_number || '-'} <span className="mx-1.5 text-slate-300">•</span> A.n. {selectedOrder.customer_name || 'Tanpa Nama'}
+                    Kode: #{String(selectedOrder.id).padStart(4, '0')} <span className="mx-1.5 text-slate-300">•</span> {selectedOrder.order_type === 'take_away' ? 'Take Away' : `Meja ${selectedOrder.table?.table_number || '-'}`} <span className="mx-1.5 text-slate-300">•</span> A.n. {selectedOrder.customer_name || 'Tanpa Nama'}
                   </p>
                 </div>
               </div>
@@ -346,7 +362,21 @@ export function IncomingOrdersPage() {
 
               {/* Action Wrapper */}
               <div className="border-t border-slate-100 bg-slate-50/50 p-6 shrink-0">
-                <div className="flex items-center justify-between mb-4 px-1">
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <p className="font-semibold text-slate-600">Metode Bayar</p>
+                  <p className="text-sm font-bold uppercase text-slate-900">
+                    {selectedOrder.payment_method || '-'}
+                  </p>
+                </div>
+                {selectedOrder.payment_proof_url && (
+                  <div className="flex items-center justify-between mb-4 px-1">
+                    <p className="font-semibold text-slate-600">Bukti Bayar</p>
+                    <a href={selectedOrder.payment_proof_url} target="_blank" rel="noreferrer" className="text-sm font-bold text-indigo-600 hover:underline">
+                      Lihat Bukti 👁️
+                    </a>
+                  </div>
+                )}
+                <div className="flex items-center justify-between mb-4 px-1 border-t border-slate-200/50 pt-3">
                   <p className="font-semibold text-slate-600">Total Tagihan</p>
                   <p className="text-lg font-bold text-slate-900">
                     {formatRupiah(selectedOrder.total_amount)}

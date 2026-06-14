@@ -32,6 +32,7 @@ export function CashierOrderPage() {
   const [selectedTableId, setSelectedTableId] = useState('')
   const [cartItems, setCartItems] = useState([])
   const [customerName, setCustomerName] = useState('')
+  const [orderType, setOrderType] = useState('dine_in')
   const [lastOrder, setLastOrder] = useState(null)
   const [error, setError] = useState({})
   const [pageError, setPageError] = useState('')
@@ -99,7 +100,8 @@ export function CashierOrderPage() {
   useEffect(() => {
     if (editId) {
       orderService.getInvoice(editId).then((order) => {
-        setSelectedTableId(order.table_id.toString())
+        setOrderType(order.order_type || 'dine_in')
+        setSelectedTableId(order.table_id?.toString() || '')
         setCustomerName(order.customer_name || '')
         setCartItems(
           order.items.map(item => ({
@@ -221,7 +223,8 @@ export function CashierOrderPage() {
 
     try {
       const payload = {
-        table_id: Number(selectedTableId),
+        order_type: orderType,
+        table_id: orderType === 'dine_in' ? Number(selectedTableId) : null,
         customer_name: customerName,
         items: cartItems.map((item) => ({
           menu_id: item.menu_id,
@@ -327,6 +330,12 @@ export function CashierOrderPage() {
             onCustomerNameChange={(val) => {
               setError({})
               setCustomerName(val)
+            }}
+            orderType={orderType}
+            onOrderTypeChange={(val) => {
+              setError({})
+              setOrderType(val)
+              if (val === 'take_away') setSelectedTableId('')
             }}
             onChangeNotes={changeNotes}
             onChangeQuantity={changeQuantity}

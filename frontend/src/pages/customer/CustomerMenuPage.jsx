@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronDown, ChevronUp, Minus, Plus, ReceiptText, Search, ShoppingBag, X } from 'lucide-react'
+import { useNavigate, useParams, Link } from 'react-router-dom'
+import { ChevronDown, ChevronUp, Minus, Plus, ReceiptText, Search, ShoppingBag, X, ArrowLeft, Utensils, Package } from 'lucide-react'
 import { Button } from '../../components/common/Button'
 import { EmptyState } from '../../components/common/EmptyState'
 import { LoadingState } from '../../components/common/LoadingState'
@@ -10,16 +10,22 @@ import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { getApiMessage, getValidationErrors } from '../../lib/api'
 import { formatRupiah } from '../../lib/currency'
 import { customerService } from '../../services/customerService'
+import { settingService } from '../../services/settingService'
 
 export function CustomerMenuPage() {
   const { qrToken } = useParams()
   const navigate = useNavigate()
+  const isTakeAwayOnly = !qrToken
   const [table, setTable] = useState(null)
   const [menus, setMenus] = useState([])
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [customerName, setCustomerName] = useState('')
+  const [orderType, setOrderType] = useState(isTakeAwayOnly ? 'take_away' : 'dine_in')
   const [cartItems, setCartItems] = useState([])
+  const [paymentMethod, setPaymentMethod] = useState('tunai')
+  const [paymentProof, setPaymentProof] = useState(null)
+  const [qrisImage, setQrisImage] = useState(null)
   const [error, setError] = useState('')
   const [fieldError, setFieldError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -31,28 +37,38 @@ export function CustomerMenuPage() {
   useEffect(() => {
     let isMounted = true
 
-    Promise.all([
-      customerService.resolveTable(qrToken),
+    const fetchPromises = [
       customerService.listMenus({ per_page: 100 }),
-    ])
-      .then(([tableData, menuResponse]) => {
-        if (!isMounted) {
-          return
+      settingService.getPublicSettings()
+    ]
+    if (qrToken) {
+      fetchPromises.push(customerService.resolveTable(qrToken))
+    }
+
+    Promise.all(fetchPromises)
+      .then((responses) => {
+        if (!isMounted) return
+
+        const menuResponse = responses[0]
+        setMenus(menuResponse.data || [])
+
+        const settingsResponse = responses[1]
+        if (settingsResponse.qris_image_url) {
+          setQrisImage(settingsResponse.qris_image_url)
         }
 
-        setTable(tableData)
-        setMenus(menuResponse.data || [])
-        customerService.rememberQrToken(qrToken)
+        if (qrToken) {
+          setTable(responses[2])
+          customerService.rememberQrToken(qrToken)
+        }
       })
       .catch((requestError) => {
-        if (isMounted) {
+        if (isMounted && qrToken) {
           setError(getApiMessage(requestError, 'QR meja tidak bisa dibuka.'))
         }
       })
       .finally(() => {
-        if (isMounted) {
-          setIsLoading(false)
-        }
+        if (isMounted) setIsLoading(false)
       })
 
     return () => {
@@ -94,6 +110,7 @@ export function CustomerMenuPage() {
 
     return Array.from(uniqueCategories, ([id, name]) => ({ id, name }))
   }, [menus])
+  
   const cartByMenuId = useMemo(
     () => new Map(cartItems.map((item) => [item.menu_id, item])),
     [cartItems],
@@ -146,18 +163,47 @@ export function CustomerMenuPage() {
     setFieldError('')
 
     try {
-      const order = await customerService.createOrder({
-        qr_token: qrToken,
-        customer_name: customerName,
-        items: cartItems.map((item) => ({
-          menu_id: item.menu_id,
-          quantity: item.quantity,
-          notes: item.notes || null,
-        })),
-      })
+      let payload;
+      if (orderType === 'take_away') {
+        if (paymentMethod === 'qris' && !paymentProof) {
+          setFieldError('Bukti pembayaran QRIS wajib diunggah.')
+          setIsSubmitting(false)
+          return
+        }
+        payload = new FormData();
+        payload.append('customer_name', customerName);
+        payload.append('order_type', orderType);
+        payload.append('payment_method', paymentMethod);
+        if (paymentMethod === 'qris' && paymentProof) {
+          payload.append('payment_proof', paymentProof);
+        }
+        cartItems.forEach((item, index) => {
+          payload.append(`items[${index}][menu_id]`, item.menu_id);
+          payload.append(`items[${index}][quantity]`, item.quantity);
+          if (item.notes) {
+            payload.append(`items[${index}][notes]`, item.notes);
+          }
+        });
+      } else {
+        payload = {
+          customer_name: customerName,
+          order_type: orderType,
+          qr_token: qrToken,
+          items: cartItems.map((item) => ({
+            menu_id: item.menu_id,
+            quantity: item.quantity,
+            notes: item.notes || null,
+          })),
+        }
+      }
+
+      const order = await customerService.createOrder(payload)
 
       customerService.rememberPublicToken(order.public_token)
-      customerService.rememberQrToken(qrToken)
+      if (qrToken) {
+        customerService.rememberQrToken(qrToken)
+      }
+      
       showToast({
         title: 'Order berhasil dikirim',
         description: 'Status order bisa dipantau dari halaman berikutnya.',
@@ -176,12 +222,12 @@ export function CustomerMenuPage() {
   if (isLoading) {
     return (
       <div className="p-4">
-        <LoadingState label="Membuka QR meja..." />
+        <LoadingState label="Menyiapkan menu..." />
       </div>
     )
   }
 
-  if (error && !table) {
+  if (error && !table && !isTakeAwayOnly) {
     return (
       <div className="p-4">
         <EmptyState description={error} title="QR meja tidak valid" />
@@ -190,23 +236,28 @@ export function CustomerMenuPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f6f2] pb-28">
-      <header className="sticky top-0 z-20 border-b border-amber-950/5 bg-[#fffdf9]/95 px-4 pb-3 pt-4 shadow-sm backdrop-blur">
+    <div className="min-h-screen bg-[#f8f9fa] pb-28 font-sans">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 pb-4 pt-4 shadow-sm backdrop-blur-md">
         <div className="mx-auto max-w-5xl">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <img alt="POS Bakso" className="h-11 w-auto shrink-0 object-contain" src="/images/Logo Red 1.png" />
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-700">Menu pelanggan</p>
-              <h1 className="text-lg font-bold text-slate-950">Pesan dari meja {table?.table_number || '-'}</h1>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <Link to="/" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-600">
+                  {isTakeAwayOnly ? 'Pesan Bawa Pulang' : 'Pesan di Tempat'}
+                </p>
+                <h1 className="text-lg font-extrabold text-slate-900 tracking-tight">
+                  {isTakeAwayOnly ? 'Take Away Menu' : `Meja ${table?.table_number || '-'}`}
+                </h1>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="mt-3">
-          <label className="relative block" htmlFor="customer-menu-search">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
             <input
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-11 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-600 focus:ring-4 focus:ring-red-100"
+              className="h-12 w-full rounded-full border border-slate-200 bg-slate-50 pl-12 pr-11 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-50"
               id="customer-menu-search"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Cari menu favorit..."
@@ -215,36 +266,35 @@ export function CustomerMenuPage() {
             {search ? (
               <button
                 aria-label="Hapus pencarian"
-                className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"
+                className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600"
                 onClick={() => setSearch('')}
                 type="button"
               >
                 <X className="h-4 w-4" />
               </button>
             ) : null}
-          </label>
-        </div>
+          </div>
         </div>
       </header>
 
       {error ? (
-        <div className="mx-4 mt-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div className="mx-4 mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           {error}
         </div>
       ) : null}
 
       <main className="mx-auto max-w-5xl p-4">
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        <div className="mb-6 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           <button
-            className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${selectedCategory === '' ? 'bg-red-700 text-white shadow-md shadow-red-900/15' : 'border border-slate-200 bg-white text-slate-600'}`}
+            className={`shrink-0 rounded-full px-5 py-2 text-xs font-bold transition-all ${selectedCategory === '' ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 shadow-sm border border-slate-200 hover:bg-slate-50'}`}
             onClick={() => setSelectedCategory('')}
             type="button"
           >
-            Semua menu
+            Semua Menu
           </button>
           {categories.map((category) => (
             <button
-              className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${selectedCategory === category.id ? 'bg-red-700 text-white shadow-md shadow-red-900/15' : 'border border-slate-200 bg-white text-slate-600'}`}
+              className={`shrink-0 rounded-full px-5 py-2 text-xs font-bold transition-all ${selectedCategory === category.id ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 shadow-sm border border-slate-200 hover:bg-slate-50'}`}
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
               type="button"
@@ -253,181 +303,274 @@ export function CustomerMenuPage() {
             </button>
           ))}
         </div>
-        <div className="mb-3 flex items-end justify-between gap-3">
+
+        <div className="mb-4 flex items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-red-700">Pilihan menu</p>
-            <h2 className="mt-0.5 text-xl font-bold text-slate-950">Mau makan apa hari ini?</h2>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Pilihan Menu</h2>
+            <p className="text-xs font-medium text-slate-500 mt-0.5">Tersedia {filteredMenus.length} menu</p>
           </div>
-          <p className="shrink-0 text-xs font-medium text-slate-500">{filteredMenus.length} menu</p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {filteredMenus.length ? (
           filteredMenus.map((menu) => (
-            <article className="group flex gap-3 rounded-2xl border border-amber-950/5 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" key={menu.id}>
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-red-50 to-amber-50 text-sm font-bold text-red-300">
+            <article className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-100 transition-all hover:-translate-y-1 hover:shadow-md hover:ring-red-100" key={menu.id}>
+              <div className="relative aspect-square w-full overflow-hidden bg-slate-100">
                 {menu.image_url ? (
-                  <img alt={menu.name} className="h-full w-full object-cover" src={menu.image_url} />
+                  <img alt={menu.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" src={menu.image_url} />
                 ) : (
-                  menu.name.slice(0, 2).toUpperCase()
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-red-50 to-red-100">
+                    <span className="text-3xl font-black text-red-200">{menu.name.slice(0, 2).toUpperCase()}</span>
+                  </div>
+                )}
+                {cartByMenuId.get(menu.id) && (
+                  <div className="absolute right-2 top-2 flex h-8 min-w-8 items-center justify-center rounded-full bg-red-600 px-2 text-xs font-bold text-white shadow-sm">
+                    {cartByMenuId.get(menu.id).quantity}x
+                  </div>
                 )}
               </div>
-              <div className="flex min-w-0 flex-1 flex-col justify-between">
-                <div>
-                  <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-red-600">{menu.category?.name || 'Menu'}</p>
-                  <p className="leading-tight font-bold text-slate-950">{menu.name}</p>
+              
+              <div className="flex flex-1 flex-col p-4">
+                <div className="mb-3 flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-red-600">{menu.category?.name || 'Menu'}</p>
+                    {menu.is_best_seller && (
+                      <span className="flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-200">
+                        🔥 Best Seller
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="line-clamp-2 text-sm font-bold leading-tight text-slate-900">{menu.name}</h3>
                   {menu.description ? (
-                    <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 leading-snug">
+                    <p className="mt-1 line-clamp-2 text-xs text-slate-500 leading-relaxed">
                       {menu.description}
                     </p>
                   ) : null}
                 </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <p className="font-bold tracking-tight text-slate-950">{formatRupiah(menu.price)}</p>
+                
+                <div className="mt-auto flex flex-col gap-3">
+                  <p className="text-base font-extrabold tracking-tight text-slate-900">{formatRupiah(menu.price)}</p>
+                  
                   {cartByMenuId.get(menu.id) ? (
-                    <div className="flex items-center gap-2 rounded-full bg-red-50 p-1">
+                    <div className="flex items-center justify-between rounded-full bg-slate-50 p-1 ring-1 ring-slate-200">
                       <button
-                        className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-red-700 shadow-sm"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-700 shadow-sm transition hover:text-red-600"
                         aria-label={`Kurangi ${menu.name}`}
                         onClick={() => changeQuantity(menu.id, cartByMenuId.get(menu.id).quantity - 1)}
                         type="button"
                       >
-                        <Minus className="h-3.5 w-3.5" />
+                        <Minus className="h-4 w-4" />
                       </button>
-                      <span className="min-w-4 text-center text-sm font-bold text-red-700">
+                      <span className="min-w-6 text-center text-sm font-bold text-slate-900">
                         {cartByMenuId.get(menu.id).quantity}
                       </span>
                       <button
-                        className="flex h-7 w-7 items-center justify-center rounded-full bg-red-700 text-white shadow-sm"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white shadow-sm transition hover:bg-red-700"
                         aria-label={`Tambah ${menu.name}`}
                         onClick={() => addItem(menu)}
                         type="button"
                       >
-                        <Plus className="h-3.5 w-3.5" />
+                        <Plus className="h-4 w-4" />
                       </button>
                     </div>
                   ) : (
-                    <Button className="h-9 rounded-full border-0 bg-red-50 px-3 text-xs font-semibold text-red-700 hover:bg-red-100" onClick={() => addItem(menu)} variant="secondary">
+                    <button 
+                      className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 py-2.5 text-xs font-bold text-white transition hover:bg-red-600" 
+                      onClick={() => addItem(menu)}
+                    >
                       <Plus className="h-3.5 w-3.5" />
                       Tambah
-                    </Button>
+                    </button>
                   )}
                 </div>
               </div>
             </article>
           ))
         ) : (
-          <EmptyState
-            description="Coba kata kunci atau kategori lain."
-            title="Menu tidak ditemukan"
-            action={
-              <Button onClick={() => setSearch('')} variant="secondary">
-                <Search className="h-4 w-4" />
-                Reset
-              </Button>
-            }
-          />
+          <div className="col-span-full">
+            <EmptyState
+              description="Coba kata kunci atau kategori lain."
+              title="Menu tidak ditemukan"
+              action={
+                <Button onClick={() => setSearch('')} variant="secondary" className="rounded-full">
+                  <Search className="mr-2 h-4 w-4" />
+                  Reset Pencarian
+                </Button>
+              }
+            />
+          </div>
         )}
         </div>
       </main>
 
-      <section className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pb-4 pt-3 shadow-[0_-10px_30px_rgba(15,23,42,0.12)] backdrop-blur">
-        <div className="mx-auto max-w-5xl">
-        <button
-          className="flex w-full items-center justify-between gap-3 text-left"
-          onClick={() => setIsCartOpen((current) => !current)}
-          type="button"
-        >
-          <div className="flex items-center gap-3">
-            <span className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 text-red-700">
-              <ShoppingBag className="h-5 w-5" />
-              {totalQty ? (
-                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-700 px-1 text-[10px] font-bold text-white">
-                  {totalQty}
-                </span>
-              ) : null}
+      <section className="fixed inset-x-0 bottom-0 z-30 rounded-t-3xl border-t border-slate-200 bg-white/95 px-4 pb-safe pt-3 shadow-[0_-20px_40px_rgba(0,0,0,0.08)] backdrop-blur-xl">
+        <div className="mx-auto max-w-5xl pb-4">
+          <button
+            className="flex w-full items-center justify-between gap-3 text-left"
+            onClick={() => setIsCartOpen((current) => !current)}
+            type="button"
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-inner">
+                <ShoppingBag className="h-5 w-5" />
+                {totalQty ? (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-red-600 px-1 text-[10px] font-black text-white">
+                    {totalQty}
+                  </span>
+                ) : null}
+              </div>
+              <div>
+                <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider">{totalQty ? `${totalQty} item` : 'Keranjang Kosong'}</span>
+                <span className="block text-lg font-black text-slate-900 tracking-tight">{formatRupiah(total)}</span>
+              </div>
+            </div>
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200">
+              {isCartOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
             </span>
-            <span>
-              <span className="block text-xs font-medium text-slate-500">{totalQty ? `${totalQty} item di keranjang` : 'Keranjang masih kosong'}</span>
-              <span className="block text-lg font-bold text-slate-950">{formatRupiah(total)}</span>
-            </span>
-          </div>
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600">
-            {isCartOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-          </span>
-        </button>
+          </button>
 
-        {isCartOpen ? (
-          <div className="mt-4 border-t border-slate-100 pt-4">
-        <div className="mb-4">
-          <label className="mb-1.5 block text-sm font-semibold text-slate-700" htmlFor="customer-name">Nama pemesan</label>
-          <input
-            className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-red-700 focus:ring-2 focus:ring-red-100"
-            id="customer-name"
-            onChange={(event) => setCustomerName(event.target.value)}
-            placeholder="Contoh: Sayang"
-            value={customerName}
-          />
-        </div>
-
-        <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
-          {cartItems.length ? (
-            cartItems.map((item) => (
-              <div className="rounded-2xl bg-slate-50 p-3" key={item.menu_id}>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-slate-950">{item.name}</p>
-                    <p className="text-sm text-slate-500">{formatRupiah(item.price)}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
+          {isCartOpen && (
+            <div className="mt-5 border-t border-slate-100 pt-5">
+              {!isTakeAwayOnly && (
+                <div className="mb-5">
+                  <label className="mb-2 block text-sm font-bold text-slate-900">Tipe Pesanan</label>
+                  <div className="grid grid-cols-2 gap-3">
                     <button
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white"
-                      onClick={() => changeQuantity(item.menu_id, item.quantity - 1)}
                       type="button"
+                      onClick={() => setOrderType('dine_in')}
+                      className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 text-sm font-bold transition-all ${orderType === 'dine_in' ? 'border-red-600 bg-red-50 text-red-700' : 'border-slate-200 bg-white text-slate-600'}`}
                     >
-                      <Minus className="h-4 w-4" />
+                      <Utensils className="h-4 w-4" />
+                      Dine In
                     </button>
-                    <span className="w-6 text-center font-semibold">{item.quantity}</span>
                     <button
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white"
-                      onClick={() => changeQuantity(item.menu_id, item.quantity + 1)}
                       type="button"
+                      onClick={() => setOrderType('take_away')}
+                      className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 text-sm font-bold transition-all ${orderType === 'take_away' ? 'border-red-600 bg-red-50 text-red-700' : 'border-slate-200 bg-white text-slate-600'}`}
                     >
-                      <Plus className="h-4 w-4" />
+                      <Package className="h-4 w-4" />
+                      Take Away
                     </button>
                   </div>
                 </div>
-                <textarea
-                  className="mt-3 min-h-14 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-red-700 focus:ring-2 focus:ring-red-100"
-                  maxLength={500}
-                  onChange={(event) => changeNotes(item.menu_id, event.target.value)}
-                  placeholder="Catatan, contoh: tanpa seledri"
-                  value={item.notes}
+              )}
+
+              <div className="mb-5">
+                <label className="mb-2 block text-sm font-bold text-slate-900" htmlFor="customer-name">Nama Anda</label>
+                <input
+                  className="h-12 w-full rounded-xl border-2 border-slate-200 bg-slate-50 px-4 text-sm font-medium outline-none transition focus:border-red-500 focus:bg-white"
+                  id="customer-name"
+                  onChange={(event) => setCustomerName(event.target.value)}
+                  placeholder="Masukkan nama pemesan..."
+                  value={customerName}
                 />
               </div>
-            ))
-          ) : (
-            <p className="rounded-lg border border-dashed border-slate-300 px-4 py-5 text-center text-sm text-slate-500">
-              Cart masih kosong.
-            </p>
+
+              {orderType === 'take_away' && (
+                <div className="mb-5 border-t border-slate-100 pt-5">
+                  <label className="mb-2 block text-sm font-bold text-slate-900">Metode Pembayaran</label>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('tunai')}
+                      className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 text-sm font-bold transition-all ${paymentMethod === 'tunai' ? 'border-red-600 bg-red-50 text-red-700' : 'border-slate-200 bg-white text-slate-600'}`}
+                    >
+                      Bayar Tunai
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('qris')}
+                      className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 text-sm font-bold transition-all ${paymentMethod === 'qris' ? 'border-red-600 bg-red-50 text-red-700' : 'border-slate-200 bg-white text-slate-600'}`}
+                    >
+                      QRIS / Transfer
+                    </button>
+                  </div>
+
+                  {paymentMethod === 'qris' && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+                      <p className="text-sm font-bold text-slate-900 mb-2">Scan QRIS ini untuk membayar</p>
+                      <div className="mx-auto mb-3 h-32 w-32 bg-white rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden">
+                        <img src={qrisImage || "/images/qris-placeholder.png"} alt="QRIS" className={`w-full h-full object-contain ${!qrisImage && 'opacity-50'}`} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} />
+                        <span className="text-xs font-bold text-slate-400 hidden">QRIS</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mb-3">Total yang harus dibayar: <strong>{formatRupiah(total)}</strong></p>
+                      
+                      <label className="block w-full cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-white px-4 py-3 text-sm font-medium hover:bg-slate-50 transition">
+                        {paymentProof ? paymentProof.name : 'Pilih File Bukti Bayar / Screenshot'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => setPaymentProof(e.target.files[0])}
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="max-h-60 space-y-3 overflow-y-auto pr-2 scrollbar-thin">
+                {cartItems.length ? (
+                  cartItems.map((item) => (
+                    <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm" key={item.menu_id}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="font-bold text-slate-900">{item.name}</p>
+                          <p className="text-sm font-medium text-slate-500">{formatRupiah(item.price)}</p>
+                        </div>
+                        <div className="flex items-center gap-2 rounded-lg bg-slate-50 p-1">
+                          <button
+                            className="flex h-8 w-8 items-center justify-center rounded bg-white text-slate-600 shadow-sm"
+                            onClick={() => changeQuantity(item.menu_id, item.quantity - 1)}
+                            type="button"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </button>
+                          <span className="w-6 text-center font-bold">{item.quantity}</span>
+                          <button
+                            className="flex h-8 w-8 items-center justify-center rounded bg-white text-slate-600 shadow-sm"
+                            onClick={() => changeQuantity(item.menu_id, item.quantity + 1)}
+                            type="button"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <textarea
+                        className="mt-3 min-h-[60px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-red-400 focus:bg-white"
+                        maxLength={500}
+                        onChange={(event) => changeNotes(item.menu_id, event.target.value)}
+                        placeholder="Catatan opsional..."
+                        value={item.notes}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border-2 border-dashed border-slate-200 py-8 text-center">
+                    <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                      <ShoppingBag className="h-6 w-6" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-500">Keranjang masih kosong</p>
+                  </div>
+                )}
+              </div>
+
+              {fieldError ? <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-600">{fieldError}</p> : null}
+
+              <div className="mt-5">
+                <Button
+                  className="w-full rounded-full py-4 text-base font-bold shadow-lg"
+                  disabled={!cartItems.length}
+                  isLoading={isSubmitting}
+                  onClick={submitOrder}
+                  size="lg"
+                >
+                  <ReceiptText className="mr-2 h-5 w-5" />
+                  Kirim Pesanan Sekarang
+                </Button>
+              </div>
+            </div>
           )}
-        </div>
-
-        {fieldError ? <p className="mt-3 text-sm font-medium text-red-600">{fieldError}</p> : null}
-
-        <div className="mt-4">
-          <Button
-            className="w-full rounded-xl"
-            disabled={!cartItems.length}
-            isLoading={isSubmitting}
-            onClick={submitOrder}
-            size="lg"
-          >
-            <ReceiptText className="h-4 w-4" />
-            Kirim pesanan
-          </Button>
-        </div>
-          </div>
-        ) : null}
         </div>
       </section>
     </div>

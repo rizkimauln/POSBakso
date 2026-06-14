@@ -15,6 +15,7 @@ export function MenuFormModal({ categories, isOpen, menu, onClose, onSaved }) {
     name: menu?.name || '',
     price: menu?.price ? String(menu.price) : '',
     is_active: menu?.is_active ?? true,
+    is_best_seller: menu?.is_best_seller ?? false,
     image: null,
   })
   const [errors, setErrors] = useState({})
@@ -143,16 +144,26 @@ export function MenuFormModal({ categories, isOpen, menu, onClose, onSaved }) {
               onChange={updateField}
               type="file"
             />
-            <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-700">
-              <input
-                checked={form.is_active}
-                className="h-4 w-4 rounded border-slate-300 text-red-700 focus:ring-red-700"
-                name="is_active"
-                onChange={updateField}
-                type="checkbox"
-              />
-              Menu aktif
-            </label>
+              <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-700">
+                <input
+                  checked={form.is_active}
+                  className="h-4 w-4 rounded border-slate-300 text-red-700 focus:ring-red-700"
+                  name="is_active"
+                  onChange={updateField}
+                  type="checkbox"
+                />
+                Menu aktif
+              </label>
+              <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-amber-50 px-3 py-3 text-sm font-medium text-amber-800 ring-1 ring-amber-100">
+                <input
+                  checked={form.is_best_seller}
+                  className="h-4 w-4 rounded border-amber-300 text-amber-700 focus:ring-amber-700"
+                  name="is_best_seller"
+                  onChange={updateField}
+                  type="checkbox"
+                />
+                🔥 Jadikan Best Seller
+              </label>
           </div>
         </div>
 

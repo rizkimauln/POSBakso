@@ -180,8 +180,14 @@ export function MenuListPage() {
             )}
           </div>
           <div>
-            <p className="font-semibold text-slate-950">{menu.name}</p>
-
+            <p className="font-semibold text-slate-950">
+              {menu.name}
+              {menu.is_best_seller && (
+                <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-200">
+                  🔥 Best Seller
+                </span>
+              )}
+            </p>
           </div>
         </div>
       ),

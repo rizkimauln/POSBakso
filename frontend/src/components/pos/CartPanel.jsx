@@ -16,6 +16,8 @@ export function CartPanel({
   selectedTableId,
   customerName,
   onCustomerNameChange,
+  orderType,
+  onOrderTypeChange,
   tables,
 }) {
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -36,19 +38,31 @@ export function CartPanel({
           value={customerName}
         />
         <Select
-          error={error?.table_id}
-          id="order-table"
-          label="Pilih meja"
-          onChange={(event) => onTableChange(event.target.value)}
-          value={selectedTableId}
+          id="order-type"
+          label="Tipe Pesanan"
+          onChange={(event) => onOrderTypeChange(event.target.value)}
+          value={orderType}
         >
-          <option value="">Pilih meja</option>
-          {tables.map((table) => (
-            <option key={table.id} value={table.id}>
-              {table.table_number} · {table.status}
-            </option>
-          ))}
+          <option value="dine_in">Dine In (Makan di Tempat)</option>
+          <option value="take_away">Take Away (Bawa Pulang)</option>
         </Select>
+
+        {orderType === 'dine_in' && (
+          <Select
+            error={error?.table_id}
+            id="order-table"
+            label="Pilih meja"
+            onChange={(event) => onTableChange(event.target.value)}
+            value={selectedTableId}
+          >
+            <option value="">Pilih meja</option>
+            {tables.map((table) => (
+              <option key={table.id} value={table.id}>
+                {table.table_number} · {table.status}
+              </option>
+            ))}
+          </Select>
+        )}
       </div>
 
       <div className="max-h-[46vh] space-y-3 overflow-y-auto pr-1">

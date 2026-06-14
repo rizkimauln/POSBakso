@@ -13,9 +13,9 @@ class UpdateOrderAction
     /**
      * @param array<int, array{menu_id:int, quantity:int, notes?:string|null}> $items
      */
-    public function execute(Order $order, Table $table, string $customerName, array $items): Order
+    public function execute(Order $order, ?Table $table, string $customerName, array $items, string $orderType = 'dine_in'): Order
     {
-        return DB::transaction(function () use ($order, $table, $customerName, $items): Order {
+        return DB::transaction(function () use ($order, $table, $customerName, $items, $orderType): Order {
             $menuIds = collect($items)->pluck('menu_id')->unique()->values();
             $menus = Menu::query()
                 ->whereIn('id', $menuIds)
@@ -50,7 +50,8 @@ class UpdateOrderAction
 
             // Update order
             $order->update([
-                'table_id' => $table->id,
+                'order_type' => $orderType,
+                'table_id' => $table?->id,
                 'customer_name' => $customerName,
                 'total_amount' => $totalAmount,
             ]);

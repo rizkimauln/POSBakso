@@ -24,6 +24,7 @@ class MenuResource extends JsonResource
             'image_path' => $this->image_path,
             'image_url' => $imageUrl,
             'is_active' => $this->is_active,
+            'is_best_seller' => $this->is_best_seller,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

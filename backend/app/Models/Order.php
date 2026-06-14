@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     protected $fillable = [
+        'order_type',
         'public_token',
         'table_id',
         'customer_name',
@@ -18,6 +19,7 @@ class Order extends Model
         'change_amount',
         'payment_method',
         'payment_status',
+        'payment_proof',
         'order_status',
     ];
 
@@ -50,5 +52,10 @@ class Order extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
     }
 }

@@ -17,9 +17,9 @@ class CreateOrderAction
     /**
      * @param array<int, array{menu_id:int, quantity:int, notes?:string|null}> $items
      */
-    public function execute(Table $table, string $customerName, array $items, ?User $user = null): Order
+    public function execute(?Table $table, string $customerName, array $items, string $orderType = 'dine_in', ?User $user = null, ?string $paymentMethod = null, ?string $paymentProof = null): Order
     {
-        return DB::transaction(function () use ($table, $customerName, $items, $user): Order {
+        return DB::transaction(function () use ($table, $customerName, $items, $orderType, $user, $paymentMethod, $paymentProof): Order {
             $menuIds = collect($items)->pluck('menu_id')->unique()->values();
             $menus = Menu::query()
                 ->whereIn('id', $menuIds)
@@ -35,10 +35,13 @@ class CreateOrderAction
 
             $order = Order::query()->create([
                 'public_token' => $this->generateUniquePublicToken(),
-                'table_id' => $table->id,
+                'order_type' => $orderType,
+                'table_id' => $table?->id,
                 'customer_name' => $customerName,
                 'user_id' => $user?->id,
                 'total_amount' => 0,
+                'payment_method' => $paymentMethod,
+                'payment_proof' => $paymentProof,
                 'payment_status' => PaymentStatus::BelumLunas->value,
                 'order_status' => $user ? 'diproses' : 'pending',
             ]);
@@ -63,9 +66,11 @@ class CreateOrderAction
                 'total_amount' => $totalAmount,
             ]);
 
-            $table->update([
-                'status' => TableStatus::Terisi->value,
-            ]);
+            if ($table) {
+                $table->update([
+                    'status' => TableStatus::Terisi->value,
+                ]);
+            }
 
             return $order->refresh()->load(['table', 'user', 'orderItems.menu.category']);
         });

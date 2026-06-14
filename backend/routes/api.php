@@ -6,8 +6,10 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\SettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,11 +17,14 @@ use App\Http\Controllers\Api\UserController;
 |--------------------------------------------------------------------------
 */
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/public/tables', [TableController::class, 'publicIndex'])->name('public.tables.index');
 Route::get('/public/tables/{qrToken}', [TableController::class, 'resolveQr'])->name('public.tables.resolve');
 Route::get('/public/menus', [MenuController::class, 'publicIndex'])->name('public.menus.index');
 Route::post('/public/orders', [OrderController::class, 'publicStore'])->name('public.orders.store');
 Route::get('/public/orders/{publicToken}', [OrderController::class, 'publicShow'])->name('public.orders.show');
-
+Route::get('/public/reviews', [ReviewController::class, 'index'])->name('public.reviews.index');
+Route::post('/public/reviews', [ReviewController::class, 'store'])->name('public.reviews.store');
+Route::get('/public/settings', [SettingController::class, 'index'])->name('public.settings.index');
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (Wajib menyertakan Bearer Token)
@@ -47,5 +52,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::apiResource('users', UserController::class);
+        Route::post('settings/qris', [SettingController::class, 'uploadQris']);
     });
 });

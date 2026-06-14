@@ -34,6 +34,12 @@ class TableController extends Controller
             ]);
     }
 
+    public function publicIndex()
+    {
+        $tables = Table::query()->orderBy('table_number')->get();
+        return ApiResponse::success('Data meja berhasil diambil', TableResource::collection($tables));
+    }
+
     public function store(StoreTableRequest $request)
     {
         $table = $this->tableService->create($request->validated());

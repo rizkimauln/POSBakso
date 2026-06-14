@@ -50,7 +50,11 @@ class OrderController extends Controller
 
     public function store(StoreOrderRequest $request)
     {
-        $table = Table::query()->findOrFail($request->validated('table_id'));
+        $orderType = $request->validated('order_type') ?? 'dine_in';
+        $table = null;
+        if ($orderType === 'dine_in') {
+            $table = Table::query()->findOrFail($request->validated('table_id'));
+        }
 
         /** @var User|null $user */
         $user = $request->user();
@@ -60,7 +64,10 @@ class OrderController extends Controller
                 $table, 
                 $request->validated('customer_name'), 
                 $request->validated('items'), 
-                $user
+                $request->validated('order_type') ?? 'dine_in',
+                $user,
+                null,
+                null
             );
         } catch (ValidationException $exception) {
             return ApiResponse::error('Validasi gagal', 422, $exception->errors());
@@ -77,15 +84,29 @@ class OrderController extends Controller
 
     public function publicStore(PublicStoreOrderRequest $request)
     {
-        $table = Table::query()
-            ->where('qr_token', $request->validated('qr_token'))
-            ->firstOrFail();
+        $orderType = $request->validated('order_type') ?? 'dine_in';
+        $table = null;
+
+        if ($orderType === 'dine_in') {
+            $table = Table::query()
+                ->where('qr_token', $request->validated('qr_token'))
+                ->firstOrFail();
+        }
+
+        $paymentProofPath = null;
+        if ($request->hasFile('payment_proof')) {
+            $paymentProofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
+        }
 
         try {
             $order = $this->createOrderAction->execute(
                 $table, 
                 $request->validated('customer_name'), 
-                $request->validated('items')
+                $request->validated('items'),
+                $orderType,
+                null,
+                $request->validated('payment_method'),
+                $paymentProofPath
             );
         } catch (ValidationException $exception) {
             return ApiResponse::error('Validasi gagal', 422, $exception->errors());
@@ -102,14 +123,19 @@ class OrderController extends Controller
 
     public function update(UpdateOrderRequest $request, Order $order)
     {
-        $table = Table::query()->findOrFail($request->validated('table_id'));
+        $orderType = $request->validated('order_type') ?? 'dine_in';
+        $table = null;
+        if ($orderType === 'dine_in') {
+            $table = Table::query()->findOrFail($request->validated('table_id'));
+        }
 
         try {
             $order = $this->updateOrderAction->execute(
                 $order,
                 $table,
                 $request->validated('customer_name'),
-                $request->validated('items')
+                $request->validated('items'),
+                $orderType
             );
         } catch (ValidationException $exception) {
             return ApiResponse::error('Validasi gagal', 422, $exception->errors());

@@ -26,6 +26,7 @@ class UpdateMenuRequest extends FormRequest
             'price' => ['required', 'integer', 'min:0'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'is_active' => ['sometimes', 'boolean'],
+            'is_best_seller' => ['sometimes', 'boolean'],
         ];
     }
 

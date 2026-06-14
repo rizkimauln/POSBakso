@@ -20,7 +20,8 @@ class UpdateOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'table_id' => ['required', 'integer', 'exists:tables,id'],
+            'order_type' => ['nullable', 'string', 'in:dine_in,take_away'],
+            'table_id' => ['required_if:order_type,dine_in', 'nullable', 'integer', 'exists:tables,id'],
             'customer_name' => ['required', 'string', 'max:255'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.menu_id' => ['required', 'integer', 'exists:menus,id'],

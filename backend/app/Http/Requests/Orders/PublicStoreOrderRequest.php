@@ -20,12 +20,15 @@ class PublicStoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'qr_token' => ['required', 'string', 'exists:tables,qr_token'],
+            'order_type' => ['nullable', 'string', 'in:dine_in,take_away'],
+            'qr_token' => ['required_if:order_type,dine_in', 'nullable', 'string', 'exists:tables,qr_token'],
             'customer_name' => ['required', 'string', 'max:255'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.menu_id' => ['required', 'integer', 'exists:menus,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.notes' => ['nullable', 'string', 'max:500'],
+            'payment_method' => ['nullable', 'string', 'in:tunai,qris'],
+            'payment_proof' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
     }
 

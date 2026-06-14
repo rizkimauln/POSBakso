@@ -11,17 +11,19 @@ class Menu extends Model
         'name', 
         'price', 
         'image_path', 
-        'is_active'
+        'is_active',
+        'is_best_seller',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'category_id' => 'integer',
-            'price' => 'integer',
-            'is_active' => 'boolean',
-        ];
-    }
+    /**
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'category_id' => 'integer',
+        'price' => 'integer',
+        'is_active' => 'boolean',
+        'is_best_seller' => 'boolean',
+    ];
 
     // Relasi: Menu dimiliki oleh sebuah kategori
     public function category()

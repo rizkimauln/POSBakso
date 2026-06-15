@@ -231,9 +231,9 @@ export function CheckoutPage() {
                           </p>
                           <div className="flex items-center gap-2">
                             {order.payment_status === 'lunas' ? (
-                              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">LUNAS</span>
+                              <span className="inline-flex items-center justify-center rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700">LUNAS</span>
                             ) : (
-                              <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">BELUM BAYAR</span>
+                              <span className="inline-flex items-center justify-center rounded-full bg-red-100 px-3 py-1 text-[10px] font-bold text-red-700">BELUM BAYAR</span>
                             )}
                           </div>
                         </div>
@@ -338,26 +338,28 @@ export function CheckoutPage() {
                           <CheckCircle2 className="h-5 w-5" />
                           Pesanan Ini Sudah Lunas
                         </div>
-                        <Button
-                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                          onClick={async () => {
-                            try {
-                              setIsCheckingOut(true);
-                              await orderService.updateStatus(selectedOrder.id, 'selesai');
-                              showToast({ title: 'Pesanan Selesai', description: 'Pesanan telah diselesaikan dan dihapus dari antrean.', tone: 'success' });
-                              setReceiptOrder(selectedOrder);
-                              setSelectedOrder(null);
-                              await loadOrders();
-                            } catch (e) {
-                              setError('Gagal menyelesaikan pesanan.');
-                            } finally {
-                              setIsCheckingOut(false);
-                            }
-                          }}
-                          isLoading={isCheckingOut}
-                        >
-                          Tandai Pesanan Selesai
-                        </Button>
+                        {selectedOrder.order_status !== 'selesai' && (
+                          <Button
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={async () => {
+                              try {
+                                setIsCheckingOut(true);
+                                await orderService.updateStatus(selectedOrder.id, 'selesai');
+                                showToast({ title: 'Pesanan Selesai', description: 'Pesanan telah diselesaikan dan dihapus dari antrean.', tone: 'success' });
+                                setReceiptOrder(selectedOrder);
+                                setSelectedOrder(null);
+                                await loadOrders();
+                              } catch (e) {
+                                setError('Gagal menyelesaikan pesanan.');
+                              } finally {
+                                setIsCheckingOut(false);
+                              }
+                            }}
+                            isLoading={isCheckingOut}
+                          >
+                            Tandai Pesanan Selesai
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <div className="space-y-4 rounded-2xl bg-white p-5 border border-slate-200/80 shadow-sm">

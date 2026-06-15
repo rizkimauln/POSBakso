@@ -15,6 +15,10 @@ class OrderService
             ->when($filters['payment_status'] ?? null, function ($query, string $status): void {
                 $query->where('payment_status', $status);
             })
+            ->where(function ($query) {
+                $query->where('order_status', '!=', 'pending')
+                      ->orWhereNotNull('payment_method');
+            })
             ->when($filters['order_status'] ?? null, function ($query, string $status): void {
                 $query->where('order_status', $status);
             })

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { ChevronDown, ChevronUp, Minus, Plus, ReceiptText, Search, ShoppingBag, X, ArrowLeft, Utensils, Package } from 'lucide-react'
+import { ChevronDown, ChevronUp, Minus, Plus, ReceiptText, Search, ShoppingBag, X, ArrowLeft, Utensils, Package, Download } from 'lucide-react'
 import { Button } from '../../components/common/Button'
 import { EmptyState } from '../../components/common/EmptyState'
 import { LoadingState } from '../../components/common/LoadingState'
@@ -23,8 +23,6 @@ export function CustomerMenuPage() {
   const [customerName, setCustomerName] = useState('')
   const [orderType, setOrderType] = useState(isTakeAwayOnly ? 'take_away' : 'dine_in')
   const [cartItems, setCartItems] = useState([])
-  const [paymentMethod, setPaymentMethod] = useState('tunai')
-  const [paymentProof, setPaymentProof] = useState(null)
   const [qrisImage, setQrisImage] = useState(null)
   const [error, setError] = useState('')
   const [fieldError, setFieldError] = useState('')
@@ -163,38 +161,15 @@ export function CustomerMenuPage() {
     setFieldError('')
 
     try {
-      let payload;
-      if (orderType === 'take_away') {
-        if (paymentMethod === 'qris' && !paymentProof) {
-          setFieldError('Bukti pembayaran QRIS wajib diunggah.')
-          setIsSubmitting(false)
-          return
-        }
-        payload = new FormData();
-        payload.append('customer_name', customerName);
-        payload.append('order_type', orderType);
-        payload.append('payment_method', paymentMethod);
-        if (paymentMethod === 'qris' && paymentProof) {
-          payload.append('payment_proof', paymentProof);
-        }
-        cartItems.forEach((item, index) => {
-          payload.append(`items[${index}][menu_id]`, item.menu_id);
-          payload.append(`items[${index}][quantity]`, item.quantity);
-          if (item.notes) {
-            payload.append(`items[${index}][notes]`, item.notes);
-          }
-        });
-      } else {
-        payload = {
-          customer_name: customerName,
-          order_type: orderType,
-          qr_token: qrToken,
-          items: cartItems.map((item) => ({
-            menu_id: item.menu_id,
-            quantity: item.quantity,
-            notes: item.notes || null,
-          })),
-        }
+      const payload = {
+        customer_name: customerName,
+        order_type: orderType,
+        qr_token: qrToken,
+        items: cartItems.map((item) => ({
+          menu_id: item.menu_id,
+          quantity: item.quantity,
+          notes: item.notes || null,
+        })),
       }
 
       const order = await customerService.createOrder(payload)
@@ -205,11 +180,11 @@ export function CustomerMenuPage() {
       }
       
       showToast({
-        title: 'Order berhasil dikirim',
-        description: 'Status order bisa dipantau dari halaman berikutnya.',
+        title: 'Keranjang Tersimpan',
+        description: 'Silakan pilih metode pembayaran Anda.',
         tone: 'success',
       })
-      navigate(`/customer/orders/${order.public_token}`)
+      navigate(`/customer/payment/${order.public_token}`)
     } catch (requestError) {
       const validationErrors = getValidationErrors(requestError)
       setFieldError(validationErrors.customer_name?.[0] || validationErrors.items?.[0] || validationErrors.qr_token?.[0] || '')
@@ -240,18 +215,17 @@ export function CustomerMenuPage() {
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 pb-4 pt-4 shadow-sm backdrop-blur-md">
         <div className="mx-auto max-w-5xl">
           <div className="flex items-center justify-between gap-3 mb-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link to="/" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-600">
-                  {isTakeAwayOnly ? 'Pesan Bawa Pulang' : 'Pesan di Tempat'}
-                </p>
-                <h1 className="text-lg font-extrabold text-slate-900 tracking-tight">
-                  {isTakeAwayOnly ? 'Take Away Menu' : `Meja ${table?.table_number || '-'}`}
-                </h1>
-              </div>
+            <div className="flex items-center gap-2">
+              <img alt="POS Bakso" className="h-8 w-auto object-contain" src="/images/Logo Red 1.png" />
+              <span className="text-lg font-extrabold text-red-700 tracking-tight">POS Bakso</span>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold uppercase text-slate-500">
+                Langkah 1 dari 2
+              </p>
+              <h1 className="text-sm font-bold text-slate-900 tracking-tight">
+                {table ? `Meja ${table.table_number}` : 'Pemesanan'}
+              </h1>
             </div>
           </div>
           <div className="relative">
@@ -335,7 +309,7 @@ export function CustomerMenuPage() {
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-red-600">{menu.category?.name || 'Menu'}</p>
                     {menu.is_best_seller && (
-                      <span className="flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-200">
+                      <span className="flex items-center justify-center rounded-full bg-amber-100 px-3 py-1 text-[10px] font-bold text-amber-700 ring-1 ring-amber-200">
                         🔥 Best Seller
                       </span>
                     )}
@@ -431,6 +405,7 @@ export function CustomerMenuPage() {
 
           {isCartOpen && (
             <div className="mt-5 border-t border-slate-100 pt-5">
+
               {!isTakeAwayOnly && (
                 <div className="mb-5">
                   <label className="mb-2 block text-sm font-bold text-slate-900">Tipe Pesanan</label>
@@ -466,48 +441,7 @@ export function CustomerMenuPage() {
                 />
               </div>
 
-              {orderType === 'take_away' && (
-                <div className="mb-5 border-t border-slate-100 pt-5">
-                  <label className="mb-2 block text-sm font-bold text-slate-900">Metode Pembayaran</label>
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('tunai')}
-                      className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 text-sm font-bold transition-all ${paymentMethod === 'tunai' ? 'border-red-600 bg-red-50 text-red-700' : 'border-slate-200 bg-white text-slate-600'}`}
-                    >
-                      Bayar Tunai
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('qris')}
-                      className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 text-sm font-bold transition-all ${paymentMethod === 'qris' ? 'border-red-600 bg-red-50 text-red-700' : 'border-slate-200 bg-white text-slate-600'}`}
-                    >
-                      QRIS / Transfer
-                    </button>
-                  </div>
 
-                  {paymentMethod === 'qris' && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
-                      <p className="text-sm font-bold text-slate-900 mb-2">Scan QRIS ini untuk membayar</p>
-                      <div className="mx-auto mb-3 h-32 w-32 bg-white rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden">
-                        <img src={qrisImage || "/images/qris-placeholder.png"} alt="QRIS" className={`w-full h-full object-contain ${!qrisImage && 'opacity-50'}`} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} />
-                        <span className="text-xs font-bold text-slate-400 hidden">QRIS</span>
-                      </div>
-                      <p className="text-xs text-slate-500 mb-3">Total yang harus dibayar: <strong>{formatRupiah(total)}</strong></p>
-                      
-                      <label className="block w-full cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-white px-4 py-3 text-sm font-medium hover:bg-slate-50 transition">
-                        {paymentProof ? paymentProof.name : 'Pilih File Bukti Bayar / Screenshot'}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => setPaymentProof(e.target.files[0])}
-                        />
-                      </label>
-                    </div>
-                  )}
-                </div>
-              )}
 
               <div className="max-h-60 space-y-3 overflow-y-auto pr-2 scrollbar-thin">
                 {cartItems.length ? (

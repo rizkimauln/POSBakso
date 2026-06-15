@@ -170,7 +170,26 @@ export function CustomerOrderStatusPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-24">
-      <div className="mx-auto max-w-2xl space-y-4 p-4">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 pb-4 pt-4 shadow-sm backdrop-blur-md">
+        <div className="mx-auto max-w-2xl">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <img alt="POS Bakso" className="h-8 w-auto object-contain" src="/images/Logo Red 1.png" />
+              <span className="text-lg font-extrabold text-red-700 tracking-tight">POS Bakso</span>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold uppercase text-slate-500">
+                Status Pesanan
+              </p>
+              <h1 className="text-sm font-bold text-slate-900 tracking-tight">
+                Order #{String(order.id).padStart(4, '0')}
+              </h1>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-2xl space-y-4 p-4 mt-2">
         <header className="rounded-2xl bg-white p-6 shadow-sm flex flex-col items-center text-center">
           <div className={`mb-4 flex h-16 w-16 items-center justify-center rounded-full ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
             {isCompleted ? <RefreshCcw className="h-8 w-8" /> : <RefreshCcw className="h-8 w-8 animate-spin" />}
@@ -182,7 +201,9 @@ export function CustomerOrderStatusPage() {
 
           <div className="mt-4 rounded-full bg-slate-100 px-4 py-2">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-              Status: <span className={isCompleted ? 'text-green-600' : 'text-red-600'}>{order.order_status}</span>
+              Status: <span className={isCompleted ? 'text-green-600' : 'text-red-600'}>
+                {order.order_status === 'pending' ? 'Menunggu' : order.order_status === 'diproses' ? 'Diproses' : order.order_status === 'selesai' ? 'Selesai' : order.order_status}
+              </span>
             </p>
           </div>
         </header>
@@ -216,7 +237,7 @@ export function CustomerOrderStatusPage() {
         </section>
 
         {/* Feedback Form Section */}
-        {!feedbackSubmitted && (
+        {isCompleted && !feedbackSubmitted && (
           <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-red-100">
             <div className="text-center mb-6">
               <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Bagaimana Pesanan Anda?</h2>
@@ -278,30 +299,16 @@ export function CustomerOrderStatusPage() {
           </section>
         )}
 
-        <div className="flex gap-3 pt-4">
-          <Link
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white !text-white shadow-md transition hover:bg-slate-800"
-            to="/"
-          >
-            <Home className="h-4 w-4 text-white !text-white" />
-            <span className="text-white !text-white">Ke Halaman Utama</span>
-          </Link>
-          {rememberedQrToken && order.order_type !== 'take_away' ? (
+        {rememberedQrToken && (
+          <div className="pt-4">
             <Link
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-700 px-4 py-3 text-sm font-bold text-white !text-white shadow-md transition hover:bg-red-800"
-              to={`/customer/menu`}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-700 px-4 py-4 text-base font-bold text-white shadow-md transition hover:bg-red-800"
+              to={`/customer/tables/${rememberedQrToken}`}
             >
-              <span className="text-white !text-white">Pesan Lagi</span>
+              <span>Pesan Lagi</span>
             </Link>
-          ) : (
-            <Link
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-700 px-4 py-3 text-sm font-bold text-white !text-white shadow-md transition hover:bg-red-800"
-              to={`/customer/menu`}
-            >
-              <span className="text-white !text-white">Pesan Lagi</span>
-            </Link>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )

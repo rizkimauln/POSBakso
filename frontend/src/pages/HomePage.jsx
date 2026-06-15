@@ -41,12 +41,6 @@ export function HomePage() {
             <img alt="POS Bakso" className="h-10 w-auto object-contain" src="/images/Logo Red 1.png" />
             <span className="text-xl font-bold text-red-700 tracking-tight">POS Bakso</span>
           </div>
-          <Link 
-            to="/customer/menu" 
-            className="rounded-full bg-red-700 px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-red-800"
-          >
-            Pesan Take Away
-          </Link>
         </div>
       </header>
 
@@ -58,22 +52,15 @@ export function HomePage() {
           
           <div className="relative mx-auto max-w-3xl px-4">
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl mb-6">
-              Nikmati Bakso Legendaris Kapan Saja
+              Cek Status Meja & Rating POS Bakso
             </h1>
             <p className="mb-10 text-lg font-medium text-slate-300 sm:text-xl">
-              Pesan untuk dibawa pulang (Take Away) langsung dari rumah, atau cek meja kosong sebelum datang untuk makan di tempat (Dine In).
+              Lihat ketersediaan meja kosong secara real-time sebelum Anda berkunjung, dan baca ulasan dari pelanggan setia kami.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link
-                to="/customer/menu"
-                className="inline-flex items-center gap-2 rounded-full bg-red-700 px-8 py-4 text-base font-bold text-white shadow-lg shadow-red-700/30 transition hover:scale-105 hover:bg-red-600"
-              >
-                <ShoppingBag className="h-5 w-5" />
-                Pesan Take Away Sekarang
-              </Link>
               <a
                 href="#cek-meja"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-white/10 bg-white/5 px-8 py-4 text-base font-bold text-white backdrop-blur-sm transition hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-white/10 bg-white/5 px-8 py-4 text-base font-bold text-white backdrop-blur-sm transition hover:bg-white/10 hover:border-white/20"
               >
                 <MapPin className="h-5 w-5" />
                 Cek Meja Kosong
@@ -152,7 +139,7 @@ export function HomePage() {
             ) : (
               <div className="rounded-3xl border-2 border-dashed border-slate-200 py-16 text-center text-slate-500">
                 <p className="text-lg">Belum ada ulasan.</p>
-                <p className="mt-1 text-sm">Pesan sekarang dan jadilah yang pertama memberikan ulasan!</p>
+                <p className="mt-1 text-sm">Rating dari pelanggan akan ditampilkan di sini.</p>
               </div>
             )}
           </div>

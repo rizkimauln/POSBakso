@@ -30,6 +30,8 @@ class OrderResource extends JsonResource
             'payment_method' => $paymentMethod instanceof BackedEnum ? $paymentMethod->value : $paymentMethod,
             'payment_status' => $paymentStatus instanceof BackedEnum ? $paymentStatus->value : $paymentStatus,
             'payment_proof_url' => $this->payment_proof ? asset('storage/' . $this->payment_proof) : null,
+            'order_status' => $this->order_status,
+            'order_type' => $this->order_type,
             'items' => OrderItemResource::collection($this->whenLoaded('orderItems')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

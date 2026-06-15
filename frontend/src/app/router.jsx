@@ -16,6 +16,7 @@ import { UserListPage } from '../pages/users/UserListPage'
 import { SettingsPage } from '../pages/settings/SettingsPage'
 import { HomePage } from '../pages/HomePage'
 import { CustomerMenuPage } from '../pages/customer/CustomerMenuPage'
+import { CustomerPaymentPage } from '../pages/customer/CustomerPaymentPage'
 import { CustomerOrderStatusPage } from '../pages/customer/CustomerOrderStatusPage'
 import { ProtectedRoute, PublicOnlyRoute } from './routeGuards'
 
@@ -104,8 +105,8 @@ export const router = createBrowserRouter([
     element: <CustomerLayout />,
     path: '/customer',
     children: [
-      { path: 'menu', element: <CustomerMenuPage /> },
       { path: 'tables/:qrToken', element: <CustomerMenuPage /> },
+      { path: 'payment/:publicToken', element: <CustomerPaymentPage /> },
       { path: 'orders/:publicToken', element: <CustomerOrderStatusPage /> },
     ],
   },

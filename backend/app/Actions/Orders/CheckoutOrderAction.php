@@ -39,11 +39,14 @@ class CheckoutOrderAction
                 'payment_status' => PaymentStatus::Lunas->value,
                 'cash_amount' => $cashAmount,
                 'change_amount' => $changeAmount,
+                'order_status' => 'selesai',
             ]);
 
-            $order->table()->update([
-                'status' => TableStatus::Kosong->value,
-            ]);
+            if ($order->table_id) {
+                $order->table()->update([
+                    'status' => TableStatus::Kosong->value,
+                ]);
+            }
 
             return $order->refresh()->load(['table', 'user', 'orderItems.menu.category']);
         });

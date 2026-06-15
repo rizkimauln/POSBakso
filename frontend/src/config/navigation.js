@@ -14,12 +14,6 @@ import {
 
 export const navigationItems = [
   {
-    label: 'Home',
-    path: '/',
-    icon: Home,
-    roles: ['admin', 'kasir'],
-  },
-  {
     label: 'Dashboard',
     path: '/app',
     icon: LayoutDashboard,

@@ -24,6 +24,11 @@ export const customerService = {
     return response.data.data
   },
 
+  async submitPayment(publicToken, payload) {
+    const response = await api.post(`/public/orders/${publicToken}/payment`, payload)
+    return response.data.data
+  },
+
   async listTables() {
     const response = await api.get('/public/tables')
     return response.data.data

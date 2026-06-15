@@ -22,6 +22,7 @@ Route::get('/public/tables/{qrToken}', [TableController::class, 'resolveQr'])->n
 Route::get('/public/menus', [MenuController::class, 'publicIndex'])->name('public.menus.index');
 Route::post('/public/orders', [OrderController::class, 'publicStore'])->name('public.orders.store');
 Route::get('/public/orders/{publicToken}', [OrderController::class, 'publicShow'])->name('public.orders.show');
+Route::post('/public/orders/{publicToken}/payment', [OrderController::class, 'publicPayment'])->name('public.orders.payment');
 Route::get('/public/reviews', [ReviewController::class, 'index'])->name('public.reviews.index');
 Route::post('/public/reviews', [ReviewController::class, 'store'])->name('public.reviews.store');
 Route::get('/public/settings', [SettingController::class, 'index'])->name('public.settings.index');

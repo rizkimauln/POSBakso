@@ -112,8 +112,6 @@ class OrderController extends Controller
             return ApiResponse::error('Validasi gagal', 422, $exception->errors());
         }
 
-        event(new OrderCreated($order));
-
         return ApiResponse::success(
             'Order berhasil dibuat',
             new OrderResource($order),
@@ -159,6 +157,44 @@ class OrderController extends Controller
 
         return ApiResponse::success(
             'Status order berhasil diambil',
+            new OrderResource($this->orderService->findDetailed($order))
+        );
+    }
+
+    public function publicPayment(Request $request, string $publicToken)
+    {
+        $order = Order::query()
+            ->where('public_token', $publicToken)
+            ->first();
+
+        if (! $order) {
+            return ApiResponse::error('Order tidak ditemukan.', 404);
+        }
+
+        $validated = $request->validate([
+            'payment_method' => ['required', 'string', 'in:tunai,qris'],
+            'payment_proof' => ['required_if:payment_method,qris', 'nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+        ], [
+            'payment_method.required' => 'Metode pembayaran wajib dipilih.',
+            'payment_method.in' => 'Metode pembayaran tidak valid.',
+            'payment_proof.required_if' => 'Bukti pembayaran wajib diunggah untuk metode QRIS.',
+            'payment_proof.image' => 'Bukti pembayaran harus berupa gambar.',
+        ]);
+
+        $paymentProofPath = $order->payment_proof;
+        if ($request->hasFile('payment_proof')) {
+            $paymentProofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
+        }
+
+        $order->update([
+            'payment_method' => $validated['payment_method'],
+            'payment_proof' => $paymentProofPath,
+        ]);
+
+        event(new OrderCreated($order));
+
+        return ApiResponse::success(
+            'Metode pembayaran berhasil disimpan',
             new OrderResource($this->orderService->findDetailed($order))
         );
     }

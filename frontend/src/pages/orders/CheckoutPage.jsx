@@ -232,6 +232,8 @@ export function CheckoutPage() {
                           <div className="flex items-center gap-2">
                             {order.payment_status === 'lunas' ? (
                               <span className="inline-flex items-center justify-center rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700">LUNAS</span>
+                            ) : order.payment_method === 'qris' && order.payment_proof_url ? (
+                              <span className="inline-flex items-center justify-center rounded-full bg-amber-100 px-3 py-1 text-[10px] font-bold text-amber-700">MENUNGGU VERIFIKASI</span>
                             ) : (
                               <span className="inline-flex items-center justify-center rounded-full bg-red-100 px-3 py-1 text-[10px] font-bold text-red-700">BELUM BAYAR</span>
                             )}

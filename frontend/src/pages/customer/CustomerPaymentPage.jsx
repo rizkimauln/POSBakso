@@ -203,7 +203,7 @@ export function CustomerPaymentPage() {
           {paymentMethod === 'qris' && (
             <div className="mb-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
               <p className="mb-2 text-sm font-bold text-slate-900">Scan QRIS ini untuk membayar</p>
-              <div className="mx-auto mb-3 flex h-40 w-40 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-300 bg-white p-2">
+              <div className="mx-auto mb-3 flex h-72 w-72 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-300 bg-white p-2">
                 <img
                   src={qrisImage || "/images/qris-placeholder.png"}
                   alt="QRIS"
@@ -241,9 +241,22 @@ export function CustomerPaymentPage() {
                   )}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg, image/png, image/jpg"
                     className="hidden"
-                    onChange={(e) => setPaymentProof(e.target.files[0])}
+                    onChange={(e) => {
+                      const file = e.target.files[0]
+                      if (file) {
+                        const validTypes = ['image/jpeg', 'image/png', 'image/jpg']
+                        if (!validTypes.includes(file.type)) {
+                          setFieldError('Mohon maaf, format file tidak didukung. Silakan ganti foto dengan format JPG atau PNG.')
+                          setPaymentProof(null)
+                          e.target.value = ''
+                          return
+                        }
+                        setFieldError('')
+                        setPaymentProof(file)
+                      }
+                    }}
                   />
                 </label>
               </div>

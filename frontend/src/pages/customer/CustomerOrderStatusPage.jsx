@@ -237,7 +237,7 @@ export function CustomerOrderStatusPage() {
         </section>
 
         {/* Feedback Form Section */}
-        {isCompleted && !feedbackSubmitted && (
+        {!feedbackSubmitted && (
           <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-red-100">
             <div className="text-center mb-6">
               <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Bagaimana Pesanan Anda?</h2>

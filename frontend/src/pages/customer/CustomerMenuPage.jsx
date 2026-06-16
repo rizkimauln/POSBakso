@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { ChevronDown, ChevronUp, Minus, Plus, ReceiptText, Search, ShoppingBag, X, ArrowLeft, Utensils, Package, Download } from 'lucide-react'
+import { ChevronDown, ChevronUp, Minus, Plus, ReceiptText, Search, ShoppingBag, X, ArrowLeft, Utensils, Package, Download, Star } from 'lucide-react'
 import { Button } from '../../components/common/Button'
 import { EmptyState } from '../../components/common/EmptyState'
 import { LoadingState } from '../../components/common/LoadingState'
+import { Modal } from '../../components/common/Modal'
 import { useDebounce } from '../../hooks/useDebounce'
 import { useToast } from '../../hooks/useToast'
 import { useAutoRefresh } from '../../hooks/useAutoRefresh'
@@ -29,6 +30,8 @@ export function CustomerMenuPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [reviews, setReviews] = useState([])
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
   const debouncedSearch = useDebounce(search, 300)
   const { showToast } = useToast()
 
@@ -37,7 +40,8 @@ export function CustomerMenuPage() {
 
     const fetchPromises = [
       customerService.listMenus({ per_page: 100 }),
-      settingService.getPublicSettings()
+      settingService.getPublicSettings(),
+      customerService.listReviews().catch(() => []) // Optional, fallback to empty array if fails
     ]
     if (qrToken) {
       fetchPromises.push(customerService.resolveTable(qrToken))
@@ -55,8 +59,11 @@ export function CustomerMenuPage() {
           setQrisImage(settingsResponse.qris_image_url)
         }
 
+        const reviewsResponse = responses[2]
+        setReviews(reviewsResponse || [])
+
         if (qrToken) {
-          setTable(responses[2])
+          setTable(responses[3])
           customerService.rememberQrToken(qrToken)
         }
       })
@@ -87,7 +94,7 @@ export function CustomerMenuPage() {
     const keyword = debouncedSearch.trim().toLowerCase()
 
     return menus.filter((menu) => {
-      const matchesCategory = !selectedCategory || String(menu.category_id) === selectedCategory
+      const matchesCategory = selectedCategory === 'best_seller' ? menu.is_best_seller : (!selectedCategory || String(menu.category_id) === selectedCategory)
       const matchesKeyword = !keyword || [menu.name, menu.description, menu.category?.name]
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(keyword))
@@ -113,6 +120,12 @@ export function CustomerMenuPage() {
     () => new Map(cartItems.map((item) => [item.menu_id, item])),
     [cartItems],
   )
+
+  const averageRating = useMemo(() => {
+    if (!reviews || reviews.length === 0) return 0
+    const sum = reviews.reduce((acc, rev) => acc + Number(rev.rating), 0)
+    return (sum / reviews.length).toFixed(1)
+  }, [reviews])
 
   function addItem(menu) {
     setFieldError('')
@@ -217,7 +230,18 @@ export function CustomerMenuPage() {
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <img alt="POS Bakso" className="h-8 w-auto object-contain" src="/images/Logo Red 1.png" />
-              <span className="text-lg font-extrabold text-red-700 tracking-tight">POS Bakso</span>
+              <div className="flex flex-col">
+                <span className="text-lg font-extrabold text-red-700 tracking-tight leading-none mb-1">POS Bakso</span>
+                {reviews.length > 0 && (
+                  <button 
+                    onClick={() => setIsReviewModalOpen(true)}
+                    className="flex items-center gap-1 text-[10px] font-bold text-amber-500 hover:text-amber-600 transition-colors bg-amber-50 px-2 py-0.5 rounded-full ring-1 ring-amber-100 w-fit"
+                  >
+                    <Star className="h-3 w-3 fill-amber-500" />
+                    {averageRating} ({reviews.length} Ulasan)
+                  </button>
+                )}
+              </div>
             </div>
             <div className="text-right">
               <p className="text-[10px] font-bold uppercase text-slate-500">
@@ -265,6 +289,13 @@ export function CustomerMenuPage() {
             type="button"
           >
             Semua Menu
+          </button>
+          <button
+            className={`shrink-0 rounded-full px-5 py-2 text-xs font-bold transition-all ${selectedCategory === 'best_seller' ? 'bg-amber-500 text-white shadow-md' : 'bg-white text-amber-600 shadow-sm border border-amber-200 hover:bg-amber-50'}`}
+            onClick={() => setSelectedCategory('best_seller')}
+            type="button"
+          >
+            🔥 Best Seller
           </button>
           {categories.map((category) => (
             <button
@@ -507,6 +538,36 @@ export function CustomerMenuPage() {
           )}
         </div>
       </section>
+
+      <Modal 
+        isOpen={isReviewModalOpen} 
+        onClose={() => setIsReviewModalOpen(false)} 
+        title="Ulasan Pelanggan Terbaru"
+      >
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 pb-2">
+          {reviews.length > 0 ? (
+            reviews.map((review) => (
+              <div key={review.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-slate-900">{review.customer_name || 'Pelanggan'}</span>
+                  <div className="flex items-center gap-1 bg-amber-100 px-2 py-0.5 rounded-full">
+                    <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                    <span className="text-[10px] font-bold text-amber-700">{Number(review.rating).toFixed(1)}</span>
+                  </div>
+                </div>
+                {review.comment && (
+                  <p className="text-xs font-medium text-slate-600 leading-relaxed mb-2">{review.comment}</p>
+                )}
+                <span className="text-[10px] font-bold text-slate-400 block">
+                  {new Date(review.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-slate-500 text-sm py-4">Belum ada ulasan.</p>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -42,6 +42,7 @@ function toMenuFormData(payload) {
   formData.append('description', payload.description || '')
   formData.append('price', payload.price)
   formData.append('is_active', payload.is_active ? '1' : '0')
+  formData.append('is_best_seller', payload.is_best_seller ? '1' : '0')
 
   if (payload.image) {
     formData.append('image', payload.image)
